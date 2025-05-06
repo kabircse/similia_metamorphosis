@@ -56,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (Platform.isAndroid) {
       path = '/sdcard/Download/tasks_export.json';
     } else if (Platform.isWindows) {
-      path = '${Directory.current.path}\tasks_export.json';
+      path = '${Directory.current.path}\\tasks_export.json';
     } else {
       final directory = await getApplicationDocumentsDirectory();
       path = '${directory.path}/tasks_export.json';
@@ -65,6 +65,60 @@ class _HomeScreenState extends State<HomeScreen> {
     final file = File(path);
     await file.writeAsString(content);
     Share.shareFiles([path], text: 'Exported Tasks');
+  }
+
+  // Show modal with task details
+  void _showTaskDetailsModal(Task task) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                task.title,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              if (task.description.isNotEmpty) ...[
+                Text(
+                  '',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(task.description),
+                SizedBox(height: 8),
+              ],
+              if (task.note.isNotEmpty) ...[
+                Text('', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(task.note),
+                SizedBox(height: 8),
+              ],
+              if (task.tags.isNotEmpty) ...[
+                Text('', style: TextStyle(fontWeight: FontWeight.bold)),
+                Wrap(
+                  spacing: 6,
+                  children:
+                      task.tags.map((tag) => Chip(label: Text(tag))).toList(),
+                ),
+              ],
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => TaskEditor(task: task)),
+                  );
+                },
+                child: Text('Edit Task'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -121,41 +175,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: Text(task.title),
                   subtitle: Text(task.note),
                   onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => TaskEditor(task: task)),
-                    );
-                    _loadTasks();
+                    _showTaskDetailsModal(task);
                   },
                   trailing: IconButton(
-                    icon: Icon(Icons.delete),
+                    icon: Icon(Icons.edit), // Changed from delete to edit icon
                     onPressed: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder:
-                            (context) => AlertDialog(
-                              title: Text('Confirm Delete'),
-                              content: Text(
-                                'Are you sure you want to delete this task?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed:
-                                      () => Navigator.pop(context, false),
-                                  child: Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: Text('Delete'),
-                                ),
-                              ],
-                            ),
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TaskEditor(task: task),
+                        ),
                       );
-
-                      if (confirm == true) {
-                        await TaskDB.deleteTask(task.id!);
-                        _loadTasks();
-                      }
+                      _loadTasks();
                     },
                   ),
                 );
