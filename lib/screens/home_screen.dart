@@ -121,7 +121,7 @@ void _loadTasks() async {
                 final task = _tasks[index];
                 return ListTile(
                   title: Text(task.title),
-                  subtitle: Text(task.tags.join(', ')),
+                  subtitle: Text(task.note),
                   onTap: () async {
                     await Navigator.push(
                       context,
@@ -132,8 +132,32 @@ void _loadTasks() async {
                   trailing: IconButton(
                     icon: Icon(Icons.delete),
                     onPressed: () async {
-                      await DBHelper().deleteTask(task.id!);
-                      _loadTasks();
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder:
+                            (context) => AlertDialog(
+                              title: Text('Confirm Delete'),
+                              content: Text(
+                                'Are you sure you want to delete this task?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed:
+                                      () => Navigator.pop(context, false),
+                                  child: Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: Text('Delete'),
+                                ),
+                              ],
+                            ),
+                      );
+
+                      if (confirm == true) {
+                        await DBHelper().deleteTask(task.id!);
+                        _loadTasks();
+                      }
                     },
                   ),
                 );
