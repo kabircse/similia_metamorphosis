@@ -59,6 +59,13 @@ class _TaskEditorState extends State<TaskEditor> {
     Navigator.pop(context);
   }
 
+  void _deleteTask() async {
+    if (widget.task != null && widget.task!.id != null) {
+      await TaskDB.deleteTask(widget.task!.id!);
+      Navigator.pop(context);
+    }
+  }
+
   void _cancelTask() {
     Navigator.pop(context);
   }
@@ -103,6 +110,66 @@ class _TaskEditorState extends State<TaskEditor> {
               ),
             ],
           ),
+    );
+  }
+
+  void _showTaskDetailsModal(Task task) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Title: ${task.title}',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              if (task.description.isNotEmpty) ...[
+                Text(
+                  'Description:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(task.description),
+                SizedBox(height: 8),
+              ],
+              if (task.note.isNotEmpty) ...[
+                Text('Note:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(task.note),
+                SizedBox(height: 8),
+              ],
+              if (task.tags.isNotEmpty) ...[
+                Text('Tags:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Wrap(
+                  spacing: 6,
+                  children:
+                      task.tags.map((tag) => Chip(label: Text(tag))).toList(),
+                ),
+              ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    child: Text('Edit'),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TaskEditor(task: task),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -191,6 +258,40 @@ class _TaskEditorState extends State<TaskEditor> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton(onPressed: _saveTask, child: Text('Save')),
+                    if (widget.task != null)
+                      ElevatedButton(
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder:
+                                (context) => AlertDialog(
+                                  title: Text('Confirm Delete'),
+                                  content: Text(
+                                    'Are you sure you want to delete this task?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed:
+                                          () => Navigator.pop(context, false),
+                                      child: Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed:
+                                          () => Navigator.pop(context, true),
+                                      child: Text('Delete'),
+                                    ),
+                                  ],
+                                ),
+                          );
+                          if (confirm == true) {
+                            _deleteTask();
+                          }
+                        },
+                        child: Text('Delete'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                      ),
                     OutlinedButton(
                       onPressed: _cancelTask,
                       child: Text('Cancel'),
