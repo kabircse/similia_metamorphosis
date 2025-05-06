@@ -12,7 +12,6 @@ void main() {
 
   runApp(TaskManagerApp());
 }
-
 class TaskManagerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

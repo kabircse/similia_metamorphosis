@@ -11,6 +11,7 @@ class TaskEditor extends StatefulWidget {
 }
 
 class _TaskEditorState extends State<TaskEditor> {
+  final _noteController = TextEditingController();
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   final _tagsController = TextEditingController();
@@ -24,6 +25,7 @@ class _TaskEditorState extends State<TaskEditor> {
     if (widget.task != null) {
       _titleController.text = widget.task!.title;
       _descController.text = widget.task!.description;
+      _noteController.text = widget.task!.note ?? '';
       _selectedTags.addAll(widget.task!.tags);
       _tagsController.text = widget.task!.tags.join(',');
     }
@@ -37,6 +39,13 @@ class _TaskEditorState extends State<TaskEditor> {
   }
 
   void _saveTask() async {
+    if (_tagsController.text.isEmpty || _titleController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Title and Tags are required')));
+      return;
+    }
+
     final manualTags =
         _tagsController.text
             .split(',')
@@ -47,9 +56,14 @@ class _TaskEditorState extends State<TaskEditor> {
       id: widget.task?.id,
       title: _titleController.text,
       description: _descController.text,
+      note: _noteController.text,
       tags: [..._selectedTags, ...manualTags].toSet().toList(),
     );
     await DBHelper().insertTask(task);
+    Navigator.pop(context);
+  }
+
+  void _cancelTask() {
     Navigator.pop(context);
   }
 
@@ -85,6 +99,10 @@ class _TaskEditorState extends State<TaskEditor> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
                 child: Text('Done'),
               ),
             ],
@@ -105,12 +123,18 @@ class _TaskEditorState extends State<TaskEditor> {
             children: [
               TextField(
                 controller: _titleController,
-                decoration: InputDecoration(labelText: 'Title'),
+                decoration: InputDecoration(labelText: 'Title *'),
               ),
               SizedBox(height: 10),
               TextField(
                 controller: _descController,
                 decoration: InputDecoration(labelText: 'Description'),
+                maxLines: 4,
+              ),
+              SizedBox(height: 10),
+              TextField(
+                controller: _noteController,
+                decoration: InputDecoration(labelText: 'Note'),
               ),
               SizedBox(height: 10),
               TextField(
@@ -132,7 +156,7 @@ class _TaskEditorState extends State<TaskEditor> {
                       ),
                       TextButton.icon(
                         icon: Icon(Icons.label_outline),
-                        label: Text('Show Tags'),
+                        label: Text('Choose Tags'),
                         onPressed: _showTagSelectorDialog,
                       ),
                     ],
@@ -152,7 +176,13 @@ class _TaskEditorState extends State<TaskEditor> {
                 ),
               ],
               SizedBox(height: 20),
-              ElevatedButton(onPressed: _saveTask, child: Text('Save')),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(onPressed: _saveTask, child: Text('Save')),
+                  ElevatedButton(onPressed: _cancelTask, child: Text('Cancel')),
+                ],
+              ),
             ],
           ),
         ),
@@ -160,3 +190,4 @@ class _TaskEditorState extends State<TaskEditor> {
     );
   }
 }
+

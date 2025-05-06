@@ -9,12 +9,14 @@ class TaskDB {
 
   Database? _db;
 
+  // Get database instance
   Future<Database> get database async {
     if (_db != null) return _db!;
     _db = await _initDB();
     return _db!;
   }
 
+  // Initialize the database and create the tasks table
   Future<Database> _initDB() async {
     final path = join(await getDatabasesPath(), 'tasks.db');
     return openDatabase(
@@ -24,7 +26,7 @@ class TaskDB {
         return db.execute('''
         CREATE TABLE tasks (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT,
+          title TEXT NOT NULL,
           description TEXT,
           tags TEXT,
           isCompleted INTEGER
@@ -34,6 +36,7 @@ class TaskDB {
     );
   }
 
+  // Insert a new task into the database
   Future<void> insertTask(Task task) async {
     final db = await database;
     await db.insert(
@@ -43,6 +46,7 @@ class TaskDB {
     );
   }
 
+  // Get all tasks, with optional search filtering by title, description, and tags
   Future<List<Task>> getTasks({String? keyword}) async {
     final db = await database;
     String where = '';
@@ -64,6 +68,7 @@ class TaskDB {
     return List.generate(maps.length, (i) => Task.fromMap(maps[i]));
   }
 
+  // Update an existing task in the database
   Future<void> updateTask(Task task) async {
     final db = await database;
     await db.update(
@@ -74,16 +79,19 @@ class TaskDB {
     );
   }
 
+  // Delete a task by ID
   Future<void> deleteTask(int id) async {
     final db = await database;
     await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
   }
 
+  // Delete all tasks in the database
   Future<void> deleteAllTasks() async {
     final db = await database;
     await db.delete('tasks');
   }
 
+  // Retrieve all tasks in the database
   Future<List<Task>> getAllTasks() async {
     final db = await database;
     final maps = await db.query('tasks');

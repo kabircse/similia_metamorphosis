@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../helpers/db_helper.dart';
-import '../models/task.dart';
-import '../screens/task_editor.dart';
 import 'dart:convert';
-import 'package:share_plus/share_plus.dart';
-import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import '../models/task.dart';
+import '../helpers/db_helper.dart';
+import 'task_editor.dart'; // Make sure this is imported
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -18,9 +18,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   List<String> _filterTags = [];
 
-  void _loadTasks() async {
+void _loadTasks() async {
     final tasks = await DBHelper().getTasks(
-      search: _searchQuery,
+      search: _searchQuery, // This is likely where the error occurs
       filterTags: _filterTags,
     );
     setState(() => _tasks = tasks);
@@ -32,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadTasks();
   }
 
+  // _importTasks method
   void _importTasks() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -48,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // _exportTasks method - Ensure this is present in your code
   void _exportTasks() async {
     final tasks = await DBHelper().getTasks();
     final content = json.encode(tasks.map((t) => t.toMap()).toList());
