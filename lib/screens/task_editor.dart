@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../helpers/db_helper.dart';
+import '../db/task_db.dart';
 import '../models/task.dart';
 
 class TaskEditor extends StatefulWidget {
@@ -33,7 +33,7 @@ class _TaskEditorState extends State<TaskEditor> {
   }
 
   void _loadAllTags() async {
-    final tasks = await DBHelper().getTasks();
+    final tasks = await TaskDB.getTasks();
     final allTags = tasks.expand((t) => t.tags).toSet().toList();
     setState(() => _allTags = allTags);
   }
@@ -59,7 +59,7 @@ class _TaskEditorState extends State<TaskEditor> {
       note: _noteController.text,
       tags: [..._selectedTags, ...manualTags].toSet().toList(),
     );
-    await DBHelper().insertTask(task);
+    await TaskDB.insertTask(task);
     Navigator.pop(context);
   }
 
@@ -194,4 +194,3 @@ class _TaskEditorState extends State<TaskEditor> {
     );
   }
 }
-

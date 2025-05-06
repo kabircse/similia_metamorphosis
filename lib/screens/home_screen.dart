@@ -5,8 +5,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/task.dart';
-import '../helpers/db_helper.dart';
-import 'task_editor.dart'; // Make sure this is imported
+import '../db/task_db.dart';
+import 'task_editor.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -18,9 +18,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   List<String> _filterTags = [];
 
-void _loadTasks() async {
-    final tasks = await DBHelper().getTasks(
-      search: _searchQuery, // This is likely where the error occurs
+  void _loadTasks() async {
+    final tasks = await TaskDB.getTasks(
+      search: _searchQuery,
       filterTags: _filterTags,
     );
     setState(() => _tasks = tasks);
@@ -32,7 +32,6 @@ void _loadTasks() async {
     _loadTasks();
   }
 
-  // _importTasks method
   void _importTasks() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -43,22 +42,21 @@ void _loadTasks() async {
       final content = await file.readAsString();
       List data = json.decode(content);
       for (var item in data) {
-        await DBHelper().insertTask(Task.fromMap(item));
+        await TaskDB.insertTask(Task.fromMap(item));
       }
       _loadTasks();
     }
   }
 
-  // _exportTasks method - Ensure this is present in your code
   void _exportTasks() async {
-    final tasks = await DBHelper().getTasks();
+    final tasks = await TaskDB.getTasks();
     final content = json.encode(tasks.map((t) => t.toMap()).toList());
 
     String path;
     if (Platform.isAndroid) {
       path = '/sdcard/Download/tasks_export.json';
     } else if (Platform.isWindows) {
-      path = '${Directory.current.path}\\tasks_export.json';
+      path = '${Directory.current.path}\tasks_export.json';
     } else {
       final directory = await getApplicationDocumentsDirectory();
       path = '${directory.path}/tasks_export.json';
@@ -155,7 +153,7 @@ void _loadTasks() async {
                       );
 
                       if (confirm == true) {
-                        await DBHelper().deleteTask(task.id!);
+                        await TaskDB.deleteTask(task.id!);
                         _loadTasks();
                       }
                     },
