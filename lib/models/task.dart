@@ -18,7 +18,7 @@ class Task {
     'id': id,
     'title': title,
     'description': description,
-    'name': note, // Add the name field here
+    'note': note, // Add the name field here
     'tags': tags.join(';'), // Store tags as a semicolon-separated string
   };
 

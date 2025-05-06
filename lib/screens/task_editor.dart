@@ -25,7 +25,7 @@ class _TaskEditorState extends State<TaskEditor> {
     if (widget.task != null) {
       _titleController.text = widget.task!.title;
       _descController.text = widget.task!.description;
-      _noteController.text = widget.task!.note ?? '';
+      _noteController.text = widget.task!.note;
       _selectedTags.addAll(widget.task!.tags);
       _tagsController.text = widget.task!.tags.join(',');
     }
