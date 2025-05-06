@@ -88,7 +88,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SizedBox(height: 8),
               if (task.description.isNotEmpty) ...[
-                Text('Description:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  'Description:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 Text(task.description),
                 SizedBox(height: 8),
               ],
@@ -101,11 +104,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 Center(
                   child: Column(
                     children: [
-                      Text('Tags:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        'Tags:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       Wrap(
                         spacing: 6,
                         alignment: WrapAlignment.center,
-                        children: task.tags.map((tag) => Chip(label: Text(tag))).toList(),
+                        children:
+                            task.tags
+                                .map((tag) => Chip(label: Text(tag)))
+                                .toList(),
                       ),
                     ],
                   ),
@@ -154,26 +163,27 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Wrap(
-            children: _tasks
-                .expand((t) => t.tags)
-                .toSet()
-                .map(
-                  (tag) => FilterChip(
-                    label: Text(tag),
-                    selected: _filterTags.contains(tag),
-                    onSelected: (bool selected) {
-                      setState(() {
-                        if (selected) {
-                          _filterTags.add(tag);
-                        } else {
-                          _filterTags.remove(tag);
-                        }
-                        _loadTasks();
-                      });
-                    },
-                  ),
-                )
-                .toList(),
+            children:
+                _tasks
+                    .expand((t) => t.tags)
+                    .toSet()
+                    .map(
+                      (tag) => FilterChip(
+                        label: Text(tag),
+                        selected: _filterTags.contains(tag),
+                        onSelected: (bool selected) {
+                          setState(() {
+                            if (selected) {
+                              _filterTags.add(tag);
+                            } else {
+                              _filterTags.remove(tag);
+                            }
+                            _loadTasks();
+                          });
+                        },
+                      ),
+                    )
+                    .toList(),
           ),
           Expanded(
             child: ListView.builder(
