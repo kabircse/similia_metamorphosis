@@ -47,38 +47,38 @@ class DBHelper {
   }
 
   // Fetch tasks from the database
-Future<List<Task>> getTasks({
-    String? search,
-    List<String>? filterTags,
-  }) async {
-    final db = await database;
-    String where = '';
-    List<String> whereArgs = [];
+  Future<List<Task>> getTasks({
+      String? search,
+      List<String>? filterTags,
+    }) async {
+      final db = await database;
+      List<String> whereClauses = [];
+      List<String> whereArgs = [];
 
-    if (search != null && search.isNotEmpty) {
-      where += "(title LIKE ? OR description LIKE ? OR tags LIKE ?)";
-      whereArgs.add('%$search%');
-      whereArgs.add('%$search%');
-      whereArgs.add('%$search%');
-    }
-
-    if (filterTags != null && filterTags.isNotEmpty) {
-      if (where.isNotEmpty) where += " AND ";
-      where += "tags LIKE ?";
-      for (var tag in filterTags) {
-        whereArgs.add('%$tag%');
+      // Add search clause
+      if (search != null && search.isNotEmpty) {
+        whereClauses.add("(title LIKE ? OR description LIKE ? OR tags LIKE ?)");
+        whereArgs.addAll(['%$search%', '%$search%', '%$search%']);
       }
+
+      // Add tag filters using AND logic
+      if (filterTags != null && filterTags.isNotEmpty) {
+        for (var tag in filterTags) {
+          whereClauses.add("tags LIKE ?");
+          whereArgs.add('%$tag%');
+        }
+      }
+
+      final where = whereClauses.isEmpty ? null : whereClauses.join(' AND ');
+
+      final List<Map<String, dynamic>> maps = await db.query(
+        'tasks',
+        where: where,
+        whereArgs: whereArgs.isEmpty ? null : whereArgs,
+      );
+
+      return List.generate(maps.length, (i) => Task.fromMap(maps[i]));
     }
-
-    final List<Map<String, dynamic>> maps = await db.query(
-      'tasks',
-      where: where.isEmpty ? null : where,
-      whereArgs: whereArgs.isEmpty ? null : whereArgs,
-    );
-
-    return List.generate(maps.length, (i) => Task.fromMap(maps[i]));
-  }
-
 
 
   // Update a task in the database

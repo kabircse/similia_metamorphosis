@@ -10,13 +10,13 @@ void main() {
     databaseFactory = databaseFactoryFfi;
   }
 
-  runApp(TaskManagerApp());
+  runApp(DiseaseProgressionApp());
 }
-class TaskManagerApp extends StatelessWidget {
+class DiseaseProgressionApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Task Manager',
+      title: 'Disease Progression',
       theme: ThemeData(
         brightness: Brightness.light,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),

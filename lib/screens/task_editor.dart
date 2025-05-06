@@ -114,7 +114,11 @@ class _TaskEditorState extends State<TaskEditor> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.task == null ? 'New Task' : 'Edit Task'),
+        title: Text(
+          widget.task == null
+              ? 'New Disease Progression'
+              : 'Edit Disease Progression',
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),

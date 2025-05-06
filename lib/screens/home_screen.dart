@@ -73,7 +73,7 @@ void _loadTasks() async {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Task Manager'),
+        title: Text('Disease Progression'),
         actions: [
           IconButton(icon: Icon(Icons.upload), onPressed: _exportTasks),
           IconButton(icon: Icon(Icons.download), onPressed: _importTasks),
