@@ -17,13 +17,18 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Task> _tasks = [];
   String _searchQuery = '';
   List<String> _filterTags = [];
+  List<String> _allTags = [];
 
   void _loadTasks() async {
     final tasks = await TaskDB.getTasks(
       search: _searchQuery,
       filterTags: _filterTags,
     );
-    setState(() => _tasks = tasks);
+    final allTags = tasks.expand((t) => t.tags).toSet().toList();
+    setState(() {
+      _tasks = tasks;
+      _allTags = allTags;
+    });
   }
 
   @override
@@ -67,7 +72,6 @@ class _HomeScreenState extends State<HomeScreen> {
     Share.shareFiles([path], text: 'Exported Tasks');
   }
 
-  // Show modal with task details
   void _showTaskDetailsModal(Task task) {
     showModalBottomSheet(
       context: context,
@@ -115,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         children: [
                           Text(
-                            '',
+                            'Tags:',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Wrap(
@@ -129,11 +133,83 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                  ]
+                  ],
+                  SizedBox(height: 16),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TaskEditor(task: task),
+                          ),
+                        );
+                      },
+                      child: Text('Edit Task', style: TextStyle(fontSize: 14)),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  void _showTagSelectionModal() async {
+    List<String> selectedTags = List.from(_filterTags);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: Text('Select Tags'),
+              content: SingleChildScrollView(
+                child: Column(
+                  children:
+                      _allTags.map((tag) {
+                        return CheckboxListTile(
+                          title: Text(tag),
+                          value: selectedTags.contains(tag),
+                          onChanged: (bool? selected) {
+                            setStateDialog(() {
+                              if (selected != null) {
+                                if (selected) {
+                                  selectedTags.add(tag);
+                                } else {
+                                  selectedTags.remove(tag);
+                                }
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _filterTags = selectedTags;
+                    });
+                    _loadTasks();
+                    Navigator.pop(context);
+                  },
+                  child: Text('Apply'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('Cancel'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -161,29 +237,18 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-          Wrap(
-            children:
-                _tasks
-                    .expand((t) => t.tags)
-                    .toSet()
-                    .map(
-                      (tag) => FilterChip(
-                        label: Text(tag),
-                        selected: _filterTags.contains(tag),
-                        onSelected: (bool selected) {
-                          setState(() {
-                            if (selected) {
-                              _filterTags.add(tag);
-                            } else {
-                              _filterTags.remove(tag);
-                            }
-                            _loadTasks();
-                          });
-                        },
-                      ),
-                    )
-                    .toList(),
-          ),
+          if (_allTags.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  icon: Icon(Icons.filter_list),
+                  label: Text("Filter Tags"),
+                  onPressed: _showTagSelectionModal,
+                ),
+              ),
+            ),
           Expanded(
             child: ListView.builder(
               itemCount: _tasks.length,
