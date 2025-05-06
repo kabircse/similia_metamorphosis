@@ -71,6 +71,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showTaskDetailsModal(Task task) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) {
         return Padding(
           padding: const EdgeInsets.all(16.0),
@@ -84,35 +88,41 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SizedBox(height: 8),
               if (task.description.isNotEmpty) ...[
-                Text(
-                  '',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+                Text('Description:', style: TextStyle(fontWeight: FontWeight.bold)),
                 Text(task.description),
                 SizedBox(height: 8),
               ],
               if (task.note.isNotEmpty) ...[
-                Text('', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('Note:', style: TextStyle(fontWeight: FontWeight.bold)),
                 Text(task.note),
                 SizedBox(height: 8),
               ],
               if (task.tags.isNotEmpty) ...[
-                Text('', style: TextStyle(fontWeight: FontWeight.bold)),
-                Wrap(
-                  spacing: 6,
-                  children:
-                      task.tags.map((tag) => Chip(label: Text(tag))).toList(),
+                Center(
+                  child: Column(
+                    children: [
+                      Text('Tags:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Wrap(
+                        spacing: 6,
+                        alignment: WrapAlignment.center,
+                        children: task.tags.map((tag) => Chip(label: Text(tag))).toList(),
+                      ),
+                    ],
+                  ),
                 ),
               ],
               SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => TaskEditor(task: task)),
-                  );
-                },
-                child: Text('Edit Task'),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => TaskEditor(task: task)),
+                    );
+                  },
+                  child: Text('Edit Task', style: TextStyle(fontSize: 14)),
+                ),
               ),
             ],
           ),
@@ -144,27 +154,26 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Wrap(
-            children:
-                _tasks
-                    .expand((t) => t.tags)
-                    .toSet()
-                    .map(
-                      (tag) => FilterChip(
-                        label: Text(tag),
-                        selected: _filterTags.contains(tag),
-                        onSelected: (bool selected) {
-                          setState(() {
-                            if (selected) {
-                              _filterTags.add(tag);
-                            } else {
-                              _filterTags.remove(tag);
-                            }
-                            _loadTasks();
-                          });
-                        },
-                      ),
-                    )
-                    .toList(),
+            children: _tasks
+                .expand((t) => t.tags)
+                .toSet()
+                .map(
+                  (tag) => FilterChip(
+                    label: Text(tag),
+                    selected: _filterTags.contains(tag),
+                    onSelected: (bool selected) {
+                      setState(() {
+                        if (selected) {
+                          _filterTags.add(tag);
+                        } else {
+                          _filterTags.remove(tag);
+                        }
+                        _loadTasks();
+                      });
+                    },
+                  ),
+                )
+                .toList(),
           ),
           Expanded(
             child: ListView.builder(
@@ -178,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _showTaskDetailsModal(task);
                   },
                   trailing: IconButton(
-                    icon: Icon(Icons.edit), // Changed from delete to edit icon
+                    icon: Icon(Icons.edit, size: 20),
                     onPressed: () async {
                       await Navigator.push(
                         context,
