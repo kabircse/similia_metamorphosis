@@ -46,7 +46,7 @@ class TaskDB {
     List<String> whereArgs = [];
 
     if (search != null && search.isNotEmpty) {
-      where += '(title LIKE ? OR description LIKE ? OR tags LIKE ?)';
+      where += '(title LIKE ? OR note LIKE ? OR tags LIKE ?)';
       whereArgs.add('%$search%');
       whereArgs.add('%$search%');
       whereArgs.add('%$search%');

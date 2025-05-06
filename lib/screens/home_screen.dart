@@ -76,64 +76,63 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                task.title,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              if (task.description.isNotEmpty) ...[
-                Text(
-                  'Description:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(task.description),
-                SizedBox(height: 8),
-              ],
-              if (task.note.isNotEmpty) ...[
-                Text('Note:', style: TextStyle(fontWeight: FontWeight.bold)),
-                Text(task.note),
-                SizedBox(height: 8),
-              ],
-              if (task.tags.isNotEmpty) ...[
-                Center(
-                  child: Column(
-                    children: [
-                      Text(
-                        'Tags:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Wrap(
-                        spacing: 6,
-                        alignment: WrapAlignment.center,
-                        children:
-                            task.tags
-                                .map((tag) => Chip(label: Text(tag)))
-                                .toList(),
-                      ),
-                    ],
+        return Center(
+          child: Container(
+            margin: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).canvasColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    task.title,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                ),
-              ],
-              SizedBox(height: 16),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => TaskEditor(task: task)),
-                    );
-                  },
-                  child: Text('Edit Task', style: TextStyle(fontSize: 14)),
-                ),
+                  SizedBox(height: 8),
+                  if (task.description.isNotEmpty) ...[
+                    Text(
+                      'Description:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(task.description),
+                    SizedBox(height: 8),
+                  ],
+                  if (task.note.isNotEmpty) ...[
+                    Text(
+                      'Note:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(task.note),
+                    SizedBox(height: 8),
+                  ],
+                  if (task.tags.isNotEmpty) ...[
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            '',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Wrap(
+                            spacing: 6,
+                            alignment: WrapAlignment.center,
+                            children:
+                                task.tags
+                                    .map((tag) => Chip(label: Text(tag)))
+                                    .toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ]
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
