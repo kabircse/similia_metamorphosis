@@ -53,34 +53,41 @@ class _TaskEditorState extends State<TaskEditor> {
     Navigator.pop(context);
   }
 
-  void _showTagSelectorModal() {
-    showModalBottomSheet(
+  void _showTagSelectorDialog() {
+    showDialog(
       context: context,
       builder:
-          (_) => Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children:
-                  _allTags.map((tag) {
-                    final isSelected = _selectedTags.contains(tag);
-                    return FilterChip(
-                      label: Text(tag),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _selectedTags.add(tag);
-                          } else {
-                            _selectedTags.remove(tag);
-                          }
-                        });
-                        Navigator.pop(context);
-                      },
-                    );
-                  }).toList(),
+          (_) => AlertDialog(
+            title: Text('Select Tags'),
+            content: SingleChildScrollView(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    _allTags.map((tag) {
+                      final isSelected = _selectedTags.contains(tag);
+                      return FilterChip(
+                        label: Text(tag),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedTags.add(tag);
+                            } else {
+                              _selectedTags.remove(tag);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Done'),
+              ),
+            ],
           ),
     );
   }
@@ -126,7 +133,7 @@ class _TaskEditorState extends State<TaskEditor> {
                       TextButton.icon(
                         icon: Icon(Icons.label_outline),
                         label: Text('Show Tags'),
-                        onPressed: _showTagSelectorModal,
+                        onPressed: _showTagSelectorDialog,
                       ),
                     ],
                   ),
