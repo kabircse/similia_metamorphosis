@@ -11,6 +11,7 @@ class TaskEditor extends StatefulWidget {
 }
 
 class _TaskEditorState extends State<TaskEditor> {
+  final _formKey = GlobalKey<FormState>();
   final _noteController = TextEditingController();
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
@@ -39,12 +40,7 @@ class _TaskEditorState extends State<TaskEditor> {
   }
 
   void _saveTask() async {
-    if (_tagsController.text.isEmpty || _titleController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Title and Tags are required')));
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     final manualTags =
         _tagsController.text
@@ -54,9 +50,9 @@ class _TaskEditorState extends State<TaskEditor> {
             .toList();
     final task = Task(
       id: widget.task?.id,
-      title: _titleController.text,
-      description: _descController.text,
-      note: _noteController.text,
+      title: _titleController.text.trim(),
+      description: _descController.text.trim(),
+      note: _noteController.text.trim(),
       tags: [..._selectedTags, ...manualTags].toSet().toList(),
     );
     await TaskDB.insertTask(task);
@@ -123,71 +119,86 @@ class _TaskEditorState extends State<TaskEditor> {
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: _titleController,
-                decoration: InputDecoration(labelText: 'Title *'),
-              ),
-              SizedBox(height: 10),
-              TextField(
-                controller: _descController,
-                decoration: InputDecoration(labelText: 'Description'),
-                maxLines: 4,
-              ),
-              SizedBox(height: 10),
-              TextField(
-                controller: _noteController,
-                decoration: InputDecoration(labelText: 'Note'),
-              ),
-              SizedBox(height: 10),
-              TextField(
-                controller: _tagsController,
-                decoration: InputDecoration(
-                  labelText: 'New tags (comma separated)',
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(labelText: 'Title *'),
+                  validator:
+                      (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Title is required'
+                              : null,
                 ),
-              ),
-              SizedBox(height: 10),
-              if (_allTags.isNotEmpty) ...[
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Select existing tags:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextButton.icon(
-                        icon: Icon(Icons.label_outline),
-                        label: Text('Choose Tags'),
-                        onPressed: _showTagSelectorDialog,
-                      ),
-                    ],
+                SizedBox(height: 10),
+                TextField(
+                  controller: _descController,
+                  decoration: InputDecoration(labelText: 'Description'),
+                  maxLines: 4,
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: _noteController,
+                  decoration: InputDecoration(labelText: 'Note'),
+                ),
+                SizedBox(height: 10),
+                TextFormField(
+                  controller: _tagsController,
+                  decoration: InputDecoration(
+                    labelText: 'New tags (comma separated)',
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.label_outline),
+                      onPressed: _showTagSelectorDialog,
+                    ),
                   ),
+                  validator:
+                      (value) =>
+                          (_selectedTags.isEmpty &&
+                                  (value == null || value.trim().isEmpty))
+                              ? 'At least one tag is required'
+                              : null,
                 ),
-                Wrap(
-                  spacing: 8,
-                  children:
-                      _selectedTags
-                          .map(
-                            (tag) => Chip(
-                              label: Text(tag),
-                              backgroundColor: Colors.blue.shade50,
-                            ),
-                          )
-                          .toList(),
+                SizedBox(height: 10),
+                if (_allTags.isNotEmpty) ...[
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Selected Tags:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Wrap(
+                    spacing: 8,
+                    children:
+                        _selectedTags
+                            .map(
+                              (tag) => Chip(
+                                label: Text(tag),
+                                backgroundColor: Colors.blue.shade50,
+                                onDeleted:
+                                    () => setState(
+                                      () => _selectedTags.remove(tag),
+                                    ),
+                              ),
+                            )
+                            .toList(),
+                  ),
+                ],
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(onPressed: _saveTask, child: Text('Save')),
+                    OutlinedButton(
+                      onPressed: _cancelTask,
+                      child: Text('Cancel'),
+                    ),
+                  ],
                 ),
               ],
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(onPressed: _saveTask, child: Text('Save')),
-                  ElevatedButton(onPressed: _cancelTask, child: Text('Cancel')),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),
