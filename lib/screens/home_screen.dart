@@ -48,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-void _exportTasks() async {
+  void _exportTasks() async {
     final tasks = await DBHelper().getTasks();
     final content = json.encode(tasks.map((t) => t.toMap()).toList());
 
@@ -82,12 +82,35 @@ void _exportTasks() async {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
-              decoration: InputDecoration(labelText: 'Search'),
+              decoration: InputDecoration(labelText: 'Search by title or tag'),
               onChanged: (value) {
                 _searchQuery = value;
                 _loadTasks();
               },
             ),
+          ),
+          Wrap(
+            children:
+                _tasks
+                    .expand((t) => t.tags)
+                    .toSet()
+                    .map(
+                      (tag) => FilterChip(
+                        label: Text(tag),
+                        selected: _filterTags.contains(tag),
+                        onSelected: (bool selected) {
+                          setState(() {
+                            if (selected) {
+                              _filterTags.add(tag);
+                            } else {
+                              _filterTags.remove(tag);
+                            }
+                            _loadTasks();
+                          });
+                        },
+                      ),
+                    )
+                    .toList(),
           ),
           Expanded(
             child: ListView.builder(

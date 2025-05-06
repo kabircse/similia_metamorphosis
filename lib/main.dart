@@ -18,7 +18,21 @@ class TaskManagerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Task Manager',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        brightness: Brightness.light,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(),
+        ),
+        chipTheme: ChipThemeData(
+          backgroundColor: Colors.grey.shade200,
+          selectedColor: Colors.blue.shade100,
+          secondarySelectedColor: Colors.blue.shade200,
+          labelStyle: TextStyle(color: Colors.black),
+          secondaryLabelStyle: TextStyle(color: Colors.black),
+        ),
+      ),
       home: HomeScreen(),
     );
   }
