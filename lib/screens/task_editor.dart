@@ -79,48 +79,93 @@ class _TaskEditorState extends State<TaskEditor> {
     Navigator.pop(context);
   }
 
-  void _showTagSelectorDialog() {
-    showDialog(
+void _showTagSelectionModal() async {
+    final sortedTags = List<String>.from(_allTags)
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    final ScrollController _scrollController = ScrollController();
+    final Set<String> tempSelectedTags = Set.from(_selectedTags);
+
+    await showDialog(
       context: context,
       builder:
-          (_) => AlertDialog(
-            title: Text('Select Tags'),
-            content: SingleChildScrollView(
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children:
-                    _allTags.map((tag) {
-                      final isSelected = _selectedTags.contains(tag);
-                      return FilterChip(
-                        label: Text(tag),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _selectedTags.add(tag);
-                            } else {
-                              _selectedTags.remove(tag);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
+          (_) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Container(
+              padding: EdgeInsets.all(16),
+              constraints: BoxConstraints(maxHeight: 400, maxWidth: 360),
+              child: StatefulBuilder(
+                builder: (context, setModalState) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Select Tags',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Expanded(
+                        child: Scrollbar(
+                          controller: _scrollController,
+                          thumbVisibility: true,
+                          child: ListView.builder(
+                            controller: _scrollController,
+                            itemCount: sortedTags.length,
+                            itemBuilder: (context, index) {
+                              final tag = sortedTags[index];
+                              final isChecked = tempSelectedTags.contains(tag);
+                              return CheckboxListTile(
+                                title: Text(tag),
+                                value: isChecked,
+                                onChanged: (checked) {
+                                  setModalState(() {
+                                    if (checked == true) {
+                                      tempSelectedTags.add(tag);
+                                    } else {
+                                      tempSelectedTags.remove(tag);
+                                    }
+                                  });
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedTags
+                                  ..clear()
+                                  ..addAll(tempSelectedTags);
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Done'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Done'),
-              ),
-            ],
           ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -166,7 +211,7 @@ class _TaskEditorState extends State<TaskEditor> {
                     labelText: 'New tags (comma separated)',
                     suffixIcon: IconButton(
                       icon: Icon(Icons.label_outline),
-                      onPressed: _showTagSelectorDialog,
+                      onPressed: _showTagSelectionModal,
                     ),
                   ),
                   validator:
