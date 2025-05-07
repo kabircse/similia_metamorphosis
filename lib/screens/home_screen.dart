@@ -111,15 +111,20 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
               if (task.tags.isNotEmpty) ...[
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Wrap(
-                      children:
-                          task.tags.map((tag) => Chip(label: Text(tag))).toList(),
+                    Expanded(
+                      child: Wrap(
+                        spacing: 8, // space between tags
+                        runSpacing: 4, // space between lines if tags wrap
+                        children:
+                            task.tags
+                                .map((tag) => Chip(label: Text(tag)))
+                                .toList(),
+                      ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.edit, size: 15),
+                      icon: Icon(Icons.edit_rounded, size: 18),
                       onPressed: () {
                         Navigator.pop(context);
                         Navigator.push(
@@ -332,7 +337,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               content: SingleChildScrollView(
-                child: Column(
+                child: Column(                  
+                  spacing: 8,
                   mainAxisSize: MainAxisSize.min,
                   children:
                       tags.map((tag) {

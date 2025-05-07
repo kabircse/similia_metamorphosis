@@ -61,19 +61,35 @@ class _TaskEditorState extends State<TaskEditor> {
 
     if (widget.task != null && widget.task!.id != null) {
       await TaskDB.updateTask(task);
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Task updated successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } else {
       await TaskDB.insertTask(task);
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Task added successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
-
-    Navigator.pop(context);
   }
 
   void _deleteTask() async {
     if (widget.task != null && widget.task!.id != null) {
       await TaskDB.deleteTask(widget.task!.id!);
       Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Task deleted'), backgroundColor: Colors.red),
+      );
     }
   }
+
 
   void _cancelTask() {
     Navigator.pop(context);
