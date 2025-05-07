@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../models/task.dart';
 import '../db/task_db.dart';
 import 'task_editor.dart';
@@ -38,23 +39,29 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadTasks();
   }
 
-void _importTasks() async {
+  void _importTasks() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.any,
+      withData: true
     );
 
-    if (result != null && result.files.single.path != null) {
-      final path = result.files.single.path!;
-      if (path.endsWith('.json')) {
+    if (result != null) {
+      final file = result.files.single;
+      final fileName = file.name.toLowerCase();
+
+      if (fileName.endsWith('.json')) {
         try {
-          final file = File(path);
-          final content = await file.readAsString();
-          List data = json.decode(content);
+          final content =
+              file.bytes != null
+                  ? utf8.decode(file.bytes!)
+                  : await File(file.path!).readAsString();
+
+          final List data = json.decode(content);
           for (var item in data) {
             await TaskDB.insertTask(Task.fromMap(item));
           }
-          _loadTasks();
 
+          _loadTasks();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Tasks imported successfully!')),
           );
@@ -71,15 +78,36 @@ void _importTasks() async {
     }
   }
 
-  void _exportTasks() async {
+void _exportTasks() async {
+    // Request storage permission
+    final status = await Permission.storage.request();
+    if (!status.isGranted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Storage permission is required to export.')),
+      );
+      return;
+    }
+
     final tasks = await TaskDB.getTasks();
     final content = json.encode(tasks.map((t) => t.toMap()).toList());
 
     String path;
     if (Platform.isAndroid) {
-      path = '/sdcard/Download/tasks_export.json';
-    } else if (Platform.isWindows) {
-      path = '${Directory.current.path}\\tasks_export.json';
+      final directory = await getExternalStorageDirectory();
+      if (directory == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Export directory not found.')));
+        return;
+      }
+
+      // Optional: create directory if not exists
+      final exportDir = Directory('${directory.path}/MyTasks');
+      if (!(await exportDir.exists())) {
+        await exportDir.create(recursive: true);
+      }
+
+      path = '${exportDir.path}/tasks_export.json';
     } else {
       final directory = await getApplicationDocumentsDirectory();
       path = '${directory.path}/tasks_export.json';
@@ -87,9 +115,10 @@ void _importTasks() async {
 
     final file = File(path);
     await file.writeAsString(content);
+
     Share.shareFiles([path], text: 'Exported Tasks');
   }
-
+  
   void _resetFilters() {
     setState(() {
       _searchQuery = '';
@@ -99,74 +128,56 @@ void _importTasks() async {
     _loadTasks();
   }
 
-  void _showTaskDetailsModal(Task task) {
+void _showTaskDetailsModal(Task task) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return Dialog(
+      builder: (context) {
+        return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          insetPadding: EdgeInsets.all(24),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          title: Text(
+            task.title,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (task.description.isNotEmpty) ...[
                   Text(
-                    task.title,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    'Description:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
+                  Text(task.description),
                   SizedBox(height: 8),
-                  if (task.description.isNotEmpty) ...[
-                    Text(
-                      'Description:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(task.description),
-                    SizedBox(height: 8),
-                  ],
-                  if (task.note.isNotEmpty) ...[
-                    Text(
-                      'Note:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(task.note),
-                    SizedBox(height: 8),
-                  ],
-                  if (task.tags.isNotEmpty) ...[
-                    Text(
-                      '',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Wrap(
-                      spacing: 6,
-                      children:
-                          task.tags
-                              .map((tag) => Chip(label: Text(tag)))
-                              .toList(),
-                    ),
-                  ],
-                  SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('Close'),
-                      ),
-                    ],
-                  ),
                 ],
-              ),
+                if (task.note.isNotEmpty) ...[
+                  Text('Note:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(task.note),
+                  SizedBox(height: 8),
+                ],
+                if (task.tags.isNotEmpty)
+                  Wrap(
+                    spacing: 6,
+                    children:
+                        task.tags.map((tag) => Chip(label: Text(tag))).toList(),
+                  ),
+              ],
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Close'),
+            ),
+          ],
         );
       },
     );
   }
+
 
   void _showTagSelectionModal() async {
     List<String> selectedTags = List.from(_filterTags);

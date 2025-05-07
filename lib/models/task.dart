@@ -27,7 +27,14 @@ class Task {
     id: map['id'],
     title: map['title'],
     description: map['description'],
-    note: map['note'], // Retrieve name from the map
-    tags: map['tags'].toString().split(';'), // Split tags back to List<String>
+    note: map['note'],
+    tags:
+        map['tags'] is String
+            ? map['tags'].split(
+              ';',
+            ) // handle if it's a semicolon-separated string
+            : List<String>.from(
+              map['tags'] ?? [],
+            ), // handle if it's already a List
   );
 }

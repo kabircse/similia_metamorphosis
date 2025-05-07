@@ -1,5 +1,8 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 
 class DBHelper {
   static Database? _db;
@@ -11,8 +14,15 @@ class DBHelper {
   }
 
   static Future<Database> _initDB() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'tasks.db');
+    String path;
+
+    if (Platform.isAndroid || Platform.isIOS) {
+      final dbDir = await getApplicationDocumentsDirectory();
+      path = join(dbDir.path, 'tasks.db');
+    } else {
+      final dbPath = await getDatabasesPath();
+      path = join(dbPath, 'tasks.db');
+    }
 
     return await openDatabase(
       path,
