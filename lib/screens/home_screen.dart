@@ -38,19 +38,36 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadTasks();
   }
 
-  void _importTasks() async {
+void _importTasks() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['json'],
+      type: FileType.any,
     );
-    if (result != null) {
-      final file = File(result.files.single.path!);
-      final content = await file.readAsString();
-      List data = json.decode(content);
-      for (var item in data) {
-        await TaskDB.insertTask(Task.fromMap(item));
+
+    if (result != null && result.files.single.path != null) {
+      final path = result.files.single.path!;
+      if (path.endsWith('.json')) {
+        try {
+          final file = File(path);
+          final content = await file.readAsString();
+          List data = json.decode(content);
+          for (var item in data) {
+            await TaskDB.insertTask(Task.fromMap(item));
+          }
+          _loadTasks();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Tasks imported successfully!')),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error importing: ${e.toString()}')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Please select a .json file')));
       }
-      _loadTasks();
     }
   }
 
@@ -83,21 +100,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showTaskDetailsModal(Task task) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Center(
-          child: Container(
-            margin: const EdgeInsets.all(16.0),
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          insetPadding: EdgeInsets.all(24),
+          child: Padding(
             padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).canvasColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -125,25 +137,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(height: 8),
                   ],
                   if (task.tags.isNotEmpty) ...[
-                    Center(
-                      child: Column(
-                        children: [
-                          Text(
-                            '',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Wrap(
-                            spacing: 6,
-                            alignment: WrapAlignment.center,
-                            children:
-                                task.tags
-                                    .map((tag) => Chip(label: Text(tag)))
-                                    .toList(),
-                          ),
-                        ],
-                      ),
+                    Text(
+                      '',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                  ]
+                    Wrap(
+                      spacing: 6,
+                      children:
+                          task.tags
+                              .map((tag) => Chip(label: Text(tag)))
+                              .toList(),
+                    ),
+                  ],
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Close'),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
