@@ -127,5 +127,10 @@ static Future<List<String>> getAllTags() async {
     return tagList;
   }
 
+  static Future<void> clearTasks() async {
+    final db = await DBHelper.database;
+    await db.delete('tasks');
+  }
+
 
 }

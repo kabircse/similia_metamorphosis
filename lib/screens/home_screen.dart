@@ -203,6 +203,50 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(icon: Icon(Icons.upload_file), onPressed: _exportTasks),
           IconButton(icon: Icon(Icons.download), onPressed: _importTasks),
+          IconButton(
+            icon: Icon(Icons.delete_forever),
+            tooltip: 'Clear All Tasks',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder:
+                    (context) => AlertDialog(
+                      title: Text('Confirm Deletion'),
+                      content: Text(
+                        'Are you sure you want to clear all tasks? This action cannot be undone.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: Text(
+                            'Clear All',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+              );
+
+              if (confirm == true) {
+                await TaskDB.clearTasks();
+                setState(() {
+                  _selectedTags.clear();
+                });
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('All tasks cleared'),
+                    backgroundColor: Colors.red,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+          ),
         ],
       ),
       body: Column(
