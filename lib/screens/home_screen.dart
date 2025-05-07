@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import '../db/task_db.dart';
 import '../models/task.dart';
 import 'task_editor.dart';
@@ -14,7 +17,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Task> _tasks = [];
   String _searchQuery = '';
-  int _limit = 5;
+  int _limit = 10;
   bool _isLoading = false;
   bool _hasMore = true;
   String _filterTag = '';
@@ -42,7 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 100 &&
         !_isLoading &&
-        _hasMore) {
+        _hasMore &&
+        _scrollController.position.maxScrollExtent > 0) {
       _loadTasks();
     }
   }
@@ -111,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   task.note,
                   style: TextStyle(
                     fontStyle: FontStyle.italic,
-                    color: Color(0xFF28a745), // Bootstrap success green
+                    color: Color(0xFF28a745),
                   ),
                 ),
                 SizedBox(height: 8),
@@ -131,6 +135,51 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _exportTasks() async {
+    final tasks = await TaskDB.getFilteredTasks(offset: 0, limit: 1000000);
+    final jsonString = jsonEncode(tasks.map((t) => t.toMap()).toList());
+
+    final result = await FilePicker.platform.saveFile(
+      dialogTitle: 'Export JSON file',
+      fileName: 'tasks.json',
+    );
+
+    if (result != null) {
+      final file = File(result);
+      await file.writeAsString(jsonString);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Exported successfully')));
+    }
+  }
+
+  Future<void> _importTasks() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      withData: true,
+    );
+
+    if (result != null && result.files.single.path != null) {
+      final file = File(result.files.single.path!);
+      final content = await file.readAsString();
+
+      try {
+        final List<dynamic> data = jsonDecode(content);
+        for (var item in data) {
+          await TaskDB.insertTask(Task.fromMap(item));
+        }
+        _resetAndSearch();
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Imported successfully')));
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Invalid JSON file')));
+      }
+    }
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -141,7 +190,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Task List')),
+      appBar: AppBar(
+        title: Text('Task List'),
+        actions: [
+          IconButton(icon: Icon(Icons.upload_file), onPressed: _exportTasks),
+          IconButton(icon: Icon(Icons.download), onPressed: _importTasks),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
@@ -172,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     task.note,
                     style: TextStyle(
                       fontStyle: FontStyle.italic,
-                      color: Color(0xFF28a745), // Bootstrap success green
+                      color: Color(0xFF28a745),
                     ),
                   ),
                   onTap: () => _showTaskDetailsModal(task),
