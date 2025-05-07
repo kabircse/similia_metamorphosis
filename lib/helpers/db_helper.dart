@@ -31,7 +31,7 @@ class DBHelper {
         await db.execute('''
           CREATE TABLE tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
+            title TEXT UNIQUE NOT NULL,
             description TEXT,
             note TEXT,
             tags TEXT NOT NULL

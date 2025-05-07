@@ -8,7 +8,7 @@ class TaskDB {
     final db = await DBHelper.database;
     return await db.insert(
       'tasks',
-      task.toMap(),
+      task.toMap()..remove('id'),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
@@ -107,4 +107,25 @@ class TaskDB {
 
     return List.generate(maps.length, (i) => Task.fromMap(maps[i]));
   }
+
+static Future<List<String>> getAllTags() async {
+    final db = await DBHelper.database;
+    final result = await db.query('tasks', columns: ['tags']);
+
+    final tagSet = <String>{};
+    for (var row in result) {
+      final tagString = row['tags'] as String? ?? '';
+      tagSet.addAll(
+        tagString.split(';').map((t) => t.trim()).where((t) => t.isNotEmpty),
+      );
+    }
+
+    final tagList = tagSet.toList();
+    tagList.sort(
+      (a, b) => a.toLowerCase().compareTo(b.toLowerCase()),
+    ); // Sort alphabetically
+    return tagList;
+  }
+
+
 }

@@ -21,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = false;
   bool _hasMore = true;
   String _filterTag = '';
+  Map<String, bool> _selectedTags = {};
 
   @override
   void initState() {
@@ -153,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _importTasks() async {
+ Future<void> _importTasks() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.any,
       withData: true,
@@ -166,7 +167,10 @@ class _HomeScreenState extends State<HomeScreen> {
       try {
         final List<dynamic> data = jsonDecode(content);
         for (var item in data) {
-          await TaskDB.insertTask(Task.fromMap(item));
+          if (item is Map<String, dynamic>) {
+            item.remove('id'); // Ensure ID is removed
+            await TaskDB.insertTask(Task.fromMap(item));
+          }
         }
         _resetAndSearch();
         ScaffoldMessenger.of(
@@ -201,12 +205,29 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Search',
-                suffixIcon: Icon(Icons.search),
-              ),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    labelText: 'Search',
+                    suffixIcon: Icon(Icons.search),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton.icon(
+                        icon: Icon(Icons.filter_list),
+                        label: Text("Filter Tags"),
+                        onPressed: _showTagSelectionModal,
+                      ),
+                    ),
+                    TextButton(onPressed: _resetFilters, child: Text("Reset")),
+                  ],
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -249,4 +270,85 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  void _showTagSelectionModal() async {
+    final tags = await TaskDB.getAllTags();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              title: Text(
+                "Select Tags to Filter",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children:
+                      tags.map((tag) {
+                        return CheckboxListTile(
+                          title: Text(tag),
+                          value: _selectedTags[tag] ?? false,
+                          onChanged: (bool? value) {
+                            setModalState(() {
+                              _selectedTags[tag] = value ?? false;
+                            });
+                          },
+                        );
+                      }).toList(),
+                ),
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    final selected =
+                        _selectedTags.entries
+                            .where((e) => e.value)
+                            .map((e) => e.key)
+                            .toList();
+
+                    setState(() {
+                      _filterTag = selected.join(',');
+                      _tasks.clear();
+                      _hasMore = true;
+                    });
+                    _loadTasks();
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("Apply"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("Cancel"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+
+  }
+
+  void _resetFilters() {
+    _searchController
+        .clear(); // This only clears the text visually. Internal value is updated immediately.
+
+    setState(() {
+      _selectedTags.clear();
+      _filterTag = '';
+      _tasks.clear();
+      _hasMore = true;
+      _searchQuery = ''; // Make sure internal search query is also cleared
+    });
+
+    _loadTasks();
+  }
+
+
 }
