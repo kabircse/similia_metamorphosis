@@ -18,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   List<String> _filterTags = [];
   List<String> _allTags = [];
+  final TextEditingController _searchController = TextEditingController();
 
   void _loadTasks() async {
     final tasks = await TaskDB.getTasks(
@@ -72,6 +73,15 @@ class _HomeScreenState extends State<HomeScreen> {
     Share.shareFiles([path], text: 'Exported Tasks');
   }
 
+  void _resetFilters() {
+    setState(() {
+      _searchQuery = '';
+      _filterTags.clear();
+      _searchController.clear();
+    });
+    _loadTasks();
+  }
+
   void _showTaskDetailsModal(Task task) {
     showModalBottomSheet(
       context: context,
@@ -119,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         children: [
                           Text(
-                            'Tags:',
+                            '',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Wrap(
@@ -133,22 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                  ],
-                  SizedBox(height: 16),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => TaskEditor(task: task),
-                          ),
-                        );
-                      },
-                      child: Text('Edit Task', style: TextStyle(fontSize: 14)),
-                    ),
-                  ),
+                  ]
                 ],
               ),
             ),
@@ -230,6 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
+              controller: _searchController,
               decoration: InputDecoration(labelText: 'Search by title or tag'),
               onChanged: (value) {
                 _searchQuery = value;
@@ -240,13 +236,17 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_allTags.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  icon: Icon(Icons.filter_list),
-                  label: Text("Filter Tags"),
-                  onPressed: _showTagSelectionModal,
-                ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextButton.icon(
+                      icon: Icon(Icons.filter_list),
+                      label: Text("Filter Tags"),
+                      onPressed: _showTagSelectionModal,
+                    ),
+                  ),
+                  TextButton(onPressed: _resetFilters, child: Text("Reset")),
+                ],
               ),
             ),
           Expanded(
@@ -257,11 +257,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 return ListTile(
                   title: Text(task.title),
                   subtitle: Text(task.note),
-                  onTap: () async {
-                    _showTaskDetailsModal(task);
-                  },
+                  onTap: () => _showTaskDetailsModal(task),
                   trailing: IconButton(
-                    icon: Icon(Icons.edit, size: 20),
+                    icon: Icon(Icons.edit_rounded, size: 12),
                     onPressed: () async {
                       await Navigator.push(
                         context,
