@@ -118,7 +118,7 @@ void _exportTasks() async {
 
     Share.shareFiles([path], text: 'Exported Tasks');
   }
-  
+
   void _resetFilters() {
     setState(() {
       _searchQuery = '';
@@ -281,7 +281,10 @@ void _showTaskDetailsModal(Task task) {
               itemBuilder: (context, index) {
                 final task = _tasks[index];
                 return ListTile(
-                  title: Text(task.title),
+                  title: Text(
+                    task.title,
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   subtitle: Text(task.note),
                   onTap: () => _showTaskDetailsModal(task),
                   trailing: IconButton(

@@ -30,9 +30,7 @@ class Task {
     note: map['note'],
     tags:
         map['tags'] is String
-            ? map['tags'].split(
-              ';',
-            ) // handle if it's a semicolon-separated string
+            ? map['tags'].split(';').map((e) => e.trim()).toList()
             : List<String>.from(
               map['tags'] ?? [],
             ), // handle if it's already a List
