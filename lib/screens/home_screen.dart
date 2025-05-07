@@ -86,19 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     task.title,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.edit, size: 15),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => TaskEditor(task: task),
-                        ),
-                      ).then((_) => _resetAndSearch());
-                    },
-                  ),
+                  )
                 ],
               ),
               SizedBox(height: 8),
@@ -122,11 +110,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(height: 8),
               ],
               if (task.tags.isNotEmpty) ...[
-                Text('', style: TextStyle(fontWeight: FontWeight.bold)),
-                Wrap(
-                  spacing: 6,
-                  children:
-                      task.tags.map((tag) => Chip(label: Text(tag))).toList(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Wrap(
+                      children:
+                          task.tags.map((tag) => Chip(label: Text(tag))).toList(),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.edit, size: 15),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TaskEditor(task: task),
+                          ),
+                        ).then((_) => _resetAndSearch());
+                      },
+                    ),
+                  ],
                 ),
               ],
             ],
