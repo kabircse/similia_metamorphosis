@@ -36,7 +36,7 @@ class TaskDB {
     await db.delete('tasks');
   }
 
-  // Fetch tasks with search and AND-based tag filtering
+  // Fetch tasks with search and AND-based tag filtering (legacy)
   static Future<List<Task>> getTasks({
     String? search,
     List<String>? filterTags,
@@ -64,6 +64,45 @@ class TaskDB {
       'tasks',
       where: where.isEmpty ? null : where,
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
+    );
+
+    return List.generate(maps.length, (i) => Task.fromMap(maps[i]));
+  }
+
+  // Get tasks with pagination and filtering (used in home_screen.dart)
+  static Future<List<Task>> getFilteredTasks({
+    String? search,
+    String? tag,
+    int offset = 0,
+    int limit = 20,
+  }) async {
+    final db = await DBHelper.database;
+
+    String where = '';
+    List<String> whereArgs = [];
+
+    if (search != null && search.isNotEmpty) {
+      where +=
+          '(title LIKE ? OR description LIKE ? OR note LIKE ? OR tags LIKE ?)';
+      whereArgs.add('%$search%');
+      whereArgs.add('%$search%');
+      whereArgs.add('%$search%');
+      whereArgs.add('%$search%');
+    }
+
+    if (tag != null && tag.isNotEmpty) {
+      if (where.isNotEmpty) where += ' AND ';
+      where += 'tags LIKE ?';
+      whereArgs.add('%$tag%');
+    }
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'tasks',
+      where: where.isEmpty ? null : where,
+      whereArgs: whereArgs.isEmpty ? null : whereArgs,
+      offset: offset,
+      limit: limit,
+      orderBy: 'id DESC',
     );
 
     return List.generate(maps.length, (i) => Task.fromMap(maps[i]));
