@@ -28,7 +28,7 @@ class _TaskEditorState extends State<TaskEditor> {
       _descController.text = widget.task!.description;
       _noteController.text = widget.task!.note;
       _selectedTags.addAll(widget.task!.tags);
-      _tagsController.text = widget.task!.tags.join(',');
+      _tagsController.text = '';
     }
     _loadAllTags();
   }
@@ -42,19 +42,29 @@ class _TaskEditorState extends State<TaskEditor> {
   void _saveTask() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final manualTags = _tagsController.text
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
+    final manualTags =
+        _tagsController.text
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+
+    final updatedTags = {..._selectedTags, ...manualTags}.toList();
+
     final task = Task(
       id: widget.task?.id,
       title: _titleController.text.trim(),
       description: _descController.text.trim(),
       note: _noteController.text.trim(),
-      tags: [..._selectedTags, ...manualTags].toSet().toList(),
+      tags: updatedTags,
     );
-    await TaskDB.insertTask(task);
+
+    if (widget.task != null && widget.task!.id != null) {
+      await TaskDB.updateTask(task);
+    } else {
+      await TaskDB.insertTask(task);
+    }
+
     Navigator.pop(context);
   }
 
@@ -72,95 +82,43 @@ class _TaskEditorState extends State<TaskEditor> {
   void _showTagSelectorDialog() {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Select Tags'),
-        content: SingleChildScrollView(
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _allTags.map((tag) {
-              final isSelected = _selectedTags.contains(tag);
-              return FilterChip(
-                label: Text(tag),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedTags.add(tag);
-                    } else {
-                      _selectedTags.remove(tag);
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Done'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showTaskDetailsModal(Task task) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text('Title: ${task.title}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 8),
-                if (task.description.isNotEmpty) ...[
-                  Text('Description:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(task.description),
-                  SizedBox(height: 8),
-                ],
-                if (task.note.isNotEmpty) ...[
-                  Text('Note:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(task.note),
-                  SizedBox(height: 8),
-                ],
-                if (task.tags.isNotEmpty) ...[
-                  Text('Tags:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Wrap(
-                    spacing: 6,
-                    children: task.tags.map((tag) => Chip(label: Text(tag))).toList(),
-                  ),
-                ],
-                SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => TaskEditor(task: task)),
-                    );
-                  },
-                  child: Text('Edit Task'),
-                ),
-              ],
+      builder:
+          (_) => AlertDialog(
+            title: Text('Select Tags'),
+            content: SingleChildScrollView(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    _allTags.map((tag) {
+                      final isSelected = _selectedTags.contains(tag);
+                      return FilterChip(
+                        label: Text(tag),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedTags.add(tag);
+                            } else {
+                              _selectedTags.remove(tag);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Done'),
+              ),
+            ],
           ),
-        );
-      },
     );
   }
 
@@ -169,7 +127,9 @@ class _TaskEditorState extends State<TaskEditor> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.task == null ? 'New Disease Progression' : 'Edit Disease Progression',
+          widget.task == null
+              ? 'New Disease Progression'
+              : 'Edit Disease Progression',
         ),
       ),
       body: Padding(
@@ -182,7 +142,11 @@ class _TaskEditorState extends State<TaskEditor> {
                 TextFormField(
                   controller: _titleController,
                   decoration: InputDecoration(labelText: 'Title *'),
-                  validator: (value) => value == null || value.trim().isEmpty ? 'Title is required' : null,
+                  validator:
+                      (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Title is required'
+                              : null,
                 ),
                 SizedBox(height: 10),
                 TextField(
@@ -205,13 +169,15 @@ class _TaskEditorState extends State<TaskEditor> {
                       onPressed: _showTagSelectorDialog,
                     ),
                   ),
-                  validator: (value) =>
-                      (_selectedTags.isEmpty && (value == null || value.trim().isEmpty))
-                          ? 'At least one tag is required'
-                          : null,
+                  validator:
+                      (value) =>
+                          (_selectedTags.isEmpty &&
+                                  (value == null || value.trim().isEmpty))
+                              ? 'At least one tag is required'
+                              : null,
                 ),
                 SizedBox(height: 10),
-                if (_allTags.isNotEmpty) ...[
+                if (_selectedTags.isNotEmpty) ...[
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -221,13 +187,19 @@ class _TaskEditorState extends State<TaskEditor> {
                   ),
                   Wrap(
                     spacing: 8,
-                    children: _selectedTags.map(
-                      (tag) => Chip(
-                        label: Text(tag),
-                        backgroundColor: Colors.blue.shade50,
-                        onDeleted: () => setState(() => _selectedTags.remove(tag)),
-                      ),
-                    ).toList(),
+                    children:
+                        _selectedTags
+                            .map(
+                              (tag) => Chip(
+                                label: Text(tag),
+                                backgroundColor: Colors.blue.shade50,
+                                onDeleted:
+                                    () => setState(
+                                      () => _selectedTags.remove(tag),
+                                    ),
+                              ),
+                            )
+                            .toList(),
                   ),
                 ],
                 SizedBox(height: 20),
@@ -240,20 +212,25 @@ class _TaskEditorState extends State<TaskEditor> {
                         onPressed: () async {
                           final confirm = await showDialog<bool>(
                             context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text('Confirm Delete'),
-                              content: Text('Are you sure you want to delete this task?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: Text('Cancel'),
+                            builder:
+                                (context) => AlertDialog(
+                                  title: Text('Confirm Delete'),
+                                  content: Text(
+                                    'Are you sure you want to delete this task?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed:
+                                          () => Navigator.pop(context, false),
+                                      child: Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed:
+                                          () => Navigator.pop(context, true),
+                                      child: Text('Delete'),
+                                    ),
+                                  ],
                                 ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: Text('Delete'),
-                                ),
-                              ],
-                            ),
                           );
                           if (confirm == true) {
                             _deleteTask();
@@ -264,7 +241,10 @@ class _TaskEditorState extends State<TaskEditor> {
                           backgroundColor: Colors.red,
                         ),
                       ),
-                    OutlinedButton(onPressed: _cancelTask, child: Text('Cancel')),
+                    OutlinedButton(
+                      onPressed: _cancelTask,
+                      child: Text('Cancel'),
+                    ),
                   ],
                 ),
               ],

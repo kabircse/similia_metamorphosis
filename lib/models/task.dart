@@ -18,21 +18,33 @@ class Task {
     'id': id,
     'title': title,
     'description': description,
-    'note': note, // Add the name field here
-    'tags': tags.join(';'), // Store tags as a semicolon-separated string
+    'note': note,
+    'tags': tags.join(';'), // Convert list to semicolon-separated string
   };
 
   // Convert Map to Task (for retrieval from database)
-  factory Task.fromMap(Map<String, dynamic> map) => Task(
-    id: map['id'],
-    title: map['title'],
-    description: map['description'],
-    note: map['note'],
-    tags:
-        map['tags'] is String
-            ? map['tags'].split(';').map((e) => e.trim()).toList()
-            : List<String>.from(
-              map['tags'] ?? [],
-            ), // handle if it's already a List
-  );
+  factory Task.fromMap(Map<String, dynamic> map) {
+    List<String> parsedTags;
+
+    if (map['tags'] is String) {
+      // Semicolon-separated string from DB
+      parsedTags =
+          (map['tags'] as String).split(';').map((e) => e.trim()).toList();
+    } else if (map['tags'] is List) {
+      // JSON array during import
+      parsedTags = List<String>.from(
+        (map['tags'] as List).map((e) => e.toString()),
+      );
+    } else {
+      parsedTags = [];
+    }
+
+    return Task(
+      id: map['id'],
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      note: map['note'] ?? '',
+      tags: parsedTags,
+    );
+  }
 }

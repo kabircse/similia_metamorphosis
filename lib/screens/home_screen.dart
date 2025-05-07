@@ -259,7 +259,6 @@ void _showTaskDetailsModal(Task task) {
               },
             ),
           ),
-          if (_allTags.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Row(
