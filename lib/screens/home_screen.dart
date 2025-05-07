@@ -14,7 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Task> _tasks = [];
   String _searchQuery = '';
-  int _limit = 20;
+  int _limit = 5;
   bool _isLoading = false;
   bool _hasMore = true;
   String _filterTag = '';
@@ -66,22 +66,35 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showTaskDetailsModal(Task task) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
+        return AlertDialog(
+          contentPadding: const EdgeInsets.all(16.0),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Title: ${task.title}',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    task.title,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.edit, size: 15),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TaskEditor(task: task),
+                        ),
+                      ).then((_) => _resetAndSearch());
+                    },
+                  ),
+                ],
               ),
               SizedBox(height: 8),
               if (task.description.isNotEmpty) ...[
@@ -93,29 +106,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(height: 8),
               ],
               if (task.note.isNotEmpty) ...[
-                Text('Note:', style: TextStyle(fontWeight: FontWeight.bold)),
-                Text(task.note),
+                Text(''),
+                Text(
+                  task.note,
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    color: Color(0xFF28a745), // Bootstrap success green
+                  ),
+                ),
                 SizedBox(height: 8),
               ],
               if (task.tags.isNotEmpty) ...[
-                Text('Tags:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('', style: TextStyle(fontWeight: FontWeight.bold)),
                 Wrap(
                   spacing: 6,
                   children:
                       task.tags.map((tag) => Chip(label: Text(tag))).toList(),
                 ),
               ],
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => TaskEditor(task: task)),
-                  ).then((_) => _resetAndSearch());
-                },
-                child: Text('Edit Task'),
-              ),
             ],
           ),
         );
@@ -156,8 +164,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
                 final task = _tasks[index];
                 return ListTile(
-                  title: Text(task.title),
-                  subtitle: Text(task.description),
+                  title: Text(
+                    task.title,
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    task.note,
+                    style: TextStyle(
+                      fontStyle: FontStyle.italic,
+                      color: Color(0xFF28a745), // Bootstrap success green
+                    ),
+                  ),
                   onTap: () => _showTaskDetailsModal(task),
                 );
               },
