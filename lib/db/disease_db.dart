@@ -1,43 +1,43 @@
 import 'package:sqflite/sqflite.dart';
 import '../helpers/db_helper.dart';
-import '../models/task.dart';
+import '../models/disease.dart';
 
-class TaskDB {
-  // Insert task
-  static Future<int> insertTask(Task task) async {
+class DiseaseDB {
+  // Insert disease
+  static Future<int> insertDisease(Disease disease) async {
     final db = await DBHelper.database;
     return await db.insert(
-      'tasks',
-      task.toMap()..remove('id'),
+      'diseases',
+      disease.toMap()..remove('id'),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  // Update task
-  static Future<int> updateTask(Task task) async {
+  // Update disease
+  static Future<int> updateDisease(Disease disease) async {
     final db = await DBHelper.database;
     return await db.update(
-      'tasks',
-      task.toMap(),
+      'diseases',
+      disease.toMap(),
       where: 'id = ?',
-      whereArgs: [task.id],
+      whereArgs: [disease.id],
     );
   }
 
-  // Delete task
-  static Future<int> deleteTask(int id) async {
+  // Delete disease
+  static Future<int> deleteDisease(int id) async {
     final db = await DBHelper.database;
-    return await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
+    return await db.delete('diseases', where: 'id = ?', whereArgs: [id]);
   }
 
   // Delete all
-  static Future<void> deleteAllTasks() async {
+  static Future<void> deleteAllDiseases() async {
     final db = await DBHelper.database;
-    await db.delete('tasks');
+    await db.delete('diseases');
   }
 
-  // Fetch tasks with search and AND-based tag filtering (legacy)
-  static Future<List<Task>> getTasks({
+  // Fetch diseases with search and AND-based tag filtering (legacy)
+  static Future<List<Disease>> getDiseases({
     String? search,
     List<String>? filterTags,
   }) async {
@@ -61,16 +61,16 @@ class TaskDB {
     }
 
     final List<Map<String, dynamic>> maps = await db.query(
-      'tasks',
+      'diseases',
       where: where.isEmpty ? null : where,
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
     );
 
-    return List.generate(maps.length, (i) => Task.fromMap(maps[i]));
+    return List.generate(maps.length, (i) => Disease.fromMap(maps[i]));
   }
 
-  // Get tasks with pagination and filtering (used in home_screen.dart)
-  static Future<List<Task>> getFilteredTasks({
+  // Get diseases with pagination and filtering (used in home_screen.dart)
+  static Future<List<Disease>> getFilteredDiseases({
     String? search,
     String? tag,
     int offset = 0,
@@ -97,7 +97,7 @@ class TaskDB {
     }
 
     final List<Map<String, dynamic>> maps = await db.query(
-      'tasks',
+      'diseases',
       where: where.isEmpty ? null : where,
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
       offset: offset,
@@ -105,12 +105,12 @@ class TaskDB {
       orderBy: 'id DESC',
     );
 
-    return List.generate(maps.length, (i) => Task.fromMap(maps[i]));
+    return List.generate(maps.length, (i) => Disease.fromMap(maps[i]));
   }
 
 static Future<List<String>> getAllTags() async {
     final db = await DBHelper.database;
-    final result = await db.query('tasks', columns: ['tags']);
+    final result = await db.query('diseases', columns: ['tags']);
 
     final tagSet = <String>{};
     for (var row in result) {
@@ -127,9 +127,9 @@ static Future<List<String>> getAllTags() async {
     return tagList;
   }
 
-  static Future<void> clearTasks() async {
+  static Future<void> clearDiseases() async {
     final db = await DBHelper.database;
-    await db.delete('tasks');
+    await db.delete('diseases');
   }
 
 

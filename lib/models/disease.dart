@@ -1,11 +1,11 @@
-class Task {
+class Disease {
   final int? id;
   final String title;
   final String description;
   final String note;
   final List<String> tags;
 
-  Task({
+  Disease({
     this.id,
     required this.title,
     required this.description,
@@ -13,7 +13,7 @@ class Task {
     required this.tags,
   });
 
-  // Convert Task to Map (for database storage)
+  // Convert Disease to Map (for database storage)
   Map<String, dynamic> toMap() => {
     'id': id,
     'title': title,
@@ -22,8 +22,8 @@ class Task {
     'tags': tags.join(';'), // Convert list to semicolon-separated string
   };
 
-  // Convert Map to Task (for retrieval from database)
-  factory Task.fromMap(Map<String, dynamic> map) {
+  // Convert Map to Disease (for retrieval from database)
+  factory Disease.fromMap(Map<String, dynamic> map) {
     List<String> parsedTags;
 
     if (map['tags'] is String) {
@@ -39,7 +39,7 @@ class Task {
       parsedTags = [];
     }
 
-    return Task(
+    return Disease(
       id: map['id'],
       title: map['title'] ?? '',
       description: map['description'] ?? '',

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import '../db/task_db.dart';
-import '../models/task.dart';
+import '../db/disease_db.dart';
+import '../models/disease.dart';
 
-class TaskEditor extends StatefulWidget {
-  final Task? task;
-  TaskEditor({this.task});
+class DiseaseEditor extends StatefulWidget {
+  final Disease? disease;
+  DiseaseEditor({this.disease});
 
   @override
-  _TaskEditorState createState() => _TaskEditorState();
+  _DiseaseEditorState createState() => _DiseaseEditorState();
 }
 
-class _TaskEditorState extends State<TaskEditor> {
+class _DiseaseEditorState extends State<DiseaseEditor> {
   final _formKey = GlobalKey<FormState>();
   final _noteController = TextEditingController();
   final _titleController = TextEditingController();
@@ -23,23 +23,23 @@ class _TaskEditorState extends State<TaskEditor> {
   @override
   void initState() {
     super.initState();
-    if (widget.task != null) {
-      _titleController.text = widget.task!.title;
-      _descController.text = widget.task!.description;
-      _noteController.text = widget.task!.note;
-      _selectedTags.addAll(widget.task!.tags);
+    if (widget.disease != null) {
+      _titleController.text = widget.disease!.title;
+      _descController.text = widget.disease!.description;
+      _noteController.text = widget.disease!.note;
+      _selectedTags.addAll(widget.disease!.tags);
       _tagsController.text = '';
     }
     _loadAllTags();
   }
 
   void _loadAllTags() async {
-    final tasks = await TaskDB.getTasks();
-    final allTags = tasks.expand((t) => t.tags).toSet().toList();
+    final diseases = await DiseaseDB.getDiseases();
+    final allTags = diseases.expand((t) => t.tags).toSet().toList();
     setState(() => _allTags = allTags);
   }
 
-  void _saveTask() async {
+  void _saveDisease() async {
     if (!_formKey.currentState!.validate()) return;
 
     final manualTags =
@@ -51,47 +51,48 @@ class _TaskEditorState extends State<TaskEditor> {
 
     final updatedTags = {..._selectedTags, ...manualTags}.toList();
 
-    final task = Task(
-      id: widget.task?.id,
+    final disease = Disease(
+      id: widget.disease?.id,
       title: _titleController.text.trim(),
       description: _descController.text.trim(),
       note: _noteController.text.trim(),
       tags: updatedTags,
     );
 
-    if (widget.task != null && widget.task!.id != null) {
-      await TaskDB.updateTask(task);
+    if (widget.disease != null && widget.disease!.id != null) {
+      await DiseaseDB.updateDisease(disease);
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Task updated successfully'),
+          content: Text('Disease updated successfully'),
           backgroundColor: Colors.green,
         ),
       );
     } else {
-      await TaskDB.insertTask(task);
+      await DiseaseDB.insertDisease(disease);
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Task added successfully'),
+          content: Text('Disease added successfully'),
           backgroundColor: Colors.green,
         ),
       );
     }
   }
 
-  void _deleteTask() async {
-    if (widget.task != null && widget.task!.id != null) {
-      await TaskDB.deleteTask(widget.task!.id!);
+  void _deleteDisease() async {
+    if (widget.disease != null && widget.disease!.id != null) {
+      await DiseaseDB.deleteDisease(widget.disease!.id!);
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Task deleted'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Disease deleted'), backgroundColor: Colors.green,
+        ),
       );
     }
   }
 
 
-  void _cancelTask() {
+  void _cancelDisease() {
     Navigator.pop(context);
   }
 
@@ -188,7 +189,7 @@ void _showTagSelectionModal() async {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.task == null
+          widget.disease == null
               ? 'New Disease Progression'
               : 'Edit Disease Progression',
         ),
@@ -267,8 +268,11 @@ void _showTagSelectionModal() async {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    ElevatedButton(onPressed: _saveTask, child: Text('Save')),
-                    if (widget.task != null)
+                    ElevatedButton(
+                      onPressed: _saveDisease,
+                      child: Text('Save'),
+                    ),
+                    if (widget.disease != null)
                       ElevatedButton(
                         onPressed: () async {
                           final confirm = await showDialog<bool>(
@@ -277,7 +281,7 @@ void _showTagSelectionModal() async {
                                 (context) => AlertDialog(
                                   title: Text('Confirm Delete'),
                                   content: Text(
-                                    'Are you sure you want to delete this task?',
+                                    'Are you sure you want to delete this disease?',
                                   ),
                                   actions: [
                                     TextButton(
@@ -294,7 +298,7 @@ void _showTagSelectionModal() async {
                                 ),
                           );
                           if (confirm == true) {
-                            _deleteTask();
+                            _deleteDisease();
                           }
                         },
                         child: Text('Delete'),
@@ -303,7 +307,7 @@ void _showTagSelectionModal() async {
                         ),
                       ),
                     OutlinedButton(
-                      onPressed: _cancelTask,
+                      onPressed: _cancelDisease,
                       child: Text('Cancel'),
                     ),
                   ],

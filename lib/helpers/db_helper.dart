@@ -18,10 +18,10 @@ class DBHelper {
 
     if (Platform.isAndroid || Platform.isIOS) {
       final dbDir = await getApplicationDocumentsDirectory();
-      path = join(dbDir.path, 'tasks.db');
+      path = join(dbDir.path, 'diseases.db');
     } else {
       final dbPath = await getDatabasesPath();
-      path = join(dbPath, 'tasks.db');
+      path = join(dbPath, 'diseases.db');
     }
 
     return await openDatabase(
@@ -29,7 +29,7 @@ class DBHelper {
       version: 1,
       onCreate: (db, version) async {
         await db.execute('''
-          CREATE TABLE tasks (
+          CREATE TABLE diseases (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT UNIQUE NOT NULL,
             description TEXT,

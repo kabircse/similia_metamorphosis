@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import '../db/task_db.dart';
-import '../models/task.dart';
-import 'task_editor.dart';
+import '../db/disease_db.dart';
+import '../models/disease.dart';
+import 'disease_editor.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -15,7 +15,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
-  List<Task> _tasks = [];
+  List<Disease> _diseases = [];
   String _searchQuery = '';
   int _limit = 10;
   bool _isLoading = false;
@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    _loadDiseases();
     _scrollController.addListener(_scrollListener);
     _searchController.addListener(() {
       _resetAndSearch();
@@ -35,11 +35,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _resetAndSearch() {
     setState(() {
-      _tasks.clear();
+      _diseases.clear();
       _hasMore = true;
       _searchQuery = _searchController.text.trim();
     });
-    _loadTasks();
+    _loadDiseases();
   }
 
   void _scrollListener() {
@@ -48,29 +48,29 @@ class _HomeScreenState extends State<HomeScreen> {
         !_isLoading &&
         _hasMore &&
         _scrollController.position.maxScrollExtent > 0) {
-      _loadTasks();
+      _loadDiseases();
     }
   }
 
-  Future<void> _loadTasks() async {
+  Future<void> _loadDiseases() async {
     if (_isLoading || !_hasMore) return;
     setState(() => _isLoading = true);
 
-    final newTasks = await TaskDB.getFilteredTasks(
+    final newDiseases = await DiseaseDB.getFilteredDiseases(
       search: _searchQuery,
       tag: _filterTag,
-      offset: _tasks.length,
+      offset: _diseases.length,
       limit: _limit,
     );
 
     setState(() {
-      _tasks.addAll(newTasks);
-      _hasMore = newTasks.length == _limit;
+      _diseases.addAll(newDiseases);
+      _hasMore = newDiseases.length == _limit;
       _isLoading = false;
     });
   }
 
-  void _showTaskDetailsModal(Task task) {
+  void _showDiseaseDetailsModal(Disease disease) {
     showDialog(
       context: context,
       builder: (context) {
@@ -84,24 +84,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    task.title,
+                    disease.title,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   )
                 ],
               ),
               SizedBox(height: 8),
-              if (task.description.isNotEmpty) ...[
+              if (disease.description.isNotEmpty) ...[
                 Text(
                   'Description:',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                Text(task.description),
+                Text(disease.description),
                 SizedBox(height: 8),
               ],
-              if (task.note.isNotEmpty) ...[
+              if (disease.note.isNotEmpty) ...[
                 Text(''),
                 Text(
-                  task.note,
+                  disease.note,
                   style: TextStyle(
                     fontStyle: FontStyle.italic,
                     color: Color(0xFF28a745),
@@ -109,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 SizedBox(height: 8),
               ],
-              if (task.tags.isNotEmpty) ...[
+              if (disease.tags.isNotEmpty) ...[
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -118,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         spacing: 8, // space between tags
                         runSpacing: 4, // space between lines if tags wrap
                         children:
-                            task.tags
+                            disease.tags
                                 .map((tag) => Chip(label: Text(tag)))
                                 .toList(),
                       ),
@@ -130,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => TaskEditor(task: task),
+                            builder: (_) => DiseaseEditor(disease: disease),
                           ),
                         ).then((_) => _resetAndSearch());
                       },
@@ -145,13 +145,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _exportTasks() async {
-    final tasks = await TaskDB.getFilteredTasks(offset: 0, limit: 1000000);
-    final jsonString = jsonEncode(tasks.map((t) => t.toMap()).toList());
+  Future<void> _exportDiseases() async {
+    final diseases = await DiseaseDB.getFilteredDiseases(
+      offset: 0,
+      limit: 1000000,
+    );
+    final jsonString = jsonEncode(diseases.map((t) => t.toMap()).toList());
 
     final result = await FilePicker.platform.saveFile(
       dialogTitle: 'Export JSON file',
-      fileName: 'tasks.json',
+      fileName: 'diseases.json',
     );
 
     if (result != null) {
@@ -163,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
- Future<void> _importTasks() async {
+  Future<void> _importDiseases() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.any,
       withData: true,
@@ -178,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
         for (var item in data) {
           if (item is Map<String, dynamic>) {
             item.remove('id'); // Ensure ID is removed
-            await TaskDB.insertTask(Task.fromMap(item));
+            await DiseaseDB.insertDisease(Disease.fromMap(item));
           }
         }
         _resetAndSearch();
@@ -206,8 +209,8 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text('Disease Progressions'),
         actions: [
-          IconButton(icon: Icon(Icons.upload_file), onPressed: _exportTasks),
-          IconButton(icon: Icon(Icons.download), onPressed: _importTasks),
+          IconButton(icon: Icon(Icons.upload_file), onPressed: _exportDiseases),
+          IconButton(icon: Icon(Icons.download), onPressed: _importDiseases),
           IconButton(
             icon: Icon(Icons.delete_forever),
             tooltip: 'Clear All',
@@ -218,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     (context) => AlertDialog(
                       title: Text('Confirm Deletion'),
                       content: Text(
-                        'Are you sure you want to clear all tasks? This action cannot be undone.',
+                        'Are you sure you want to clear all diseases? This action cannot be undone.',
                       ),
                       actions: [
                         TextButton(
@@ -237,15 +240,15 @@ class _HomeScreenState extends State<HomeScreen> {
               );
 
               if (confirm == true) {
-                await TaskDB.clearTasks();
+                await DiseaseDB.clearDiseases();
                 setState(() {
                   _selectedTags.clear();
                 });
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('All tasks cleared'),
-                    backgroundColor: Colors.red,
+                    content: Text('All diseases cleared'),
+                    backgroundColor: Colors.green,
                     duration: Duration(seconds: 2),
                   ),
                 );
@@ -286,25 +289,25 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              itemCount: _tasks.length + (_hasMore ? 1 : 0),
+              itemCount: _diseases.length + (_hasMore ? 1 : 0),
               itemBuilder: (context, index) {
-                if (index == _tasks.length) {
+                if (index == _diseases.length) {
                   return Center(child: CircularProgressIndicator());
                 }
-                final task = _tasks[index];
+                final disease = _diseases[index];
                 return ListTile(
                   title: Text(
-                    task.title,
+                    disease.title,
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
-                    task.note,
+                    disease.note,
                     style: TextStyle(
                       fontStyle: FontStyle.italic,
                       color: Color(0xFF28a745),
                     ),
                   ),
-                  onTap: () => _showTaskDetailsModal(task),
+                  onTap: () => _showDiseaseDetailsModal(disease),
                 );
               },
             ),
@@ -315,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () async {
           await Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => TaskEditor()),
+            MaterialPageRoute(builder: (_) => DiseaseEditor()),
           );
           _resetAndSearch();
         },
@@ -325,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showTagSelectionModal() async {
-    final tags = await TaskDB.getAllTags();
+    final tags = await DiseaseDB.getAllTags();
     showDialog(
       context: context,
       builder: (context) {
@@ -365,10 +368,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     setState(() {
                       _filterTag = selected.join(',');
-                      _tasks.clear();
+                      _diseases.clear();
                       _hasMore = true;
                     });
-                    _loadTasks();
+                    _loadDiseases();
                     Navigator.of(context).pop();
                   },
                   child: Text("Apply"),
@@ -396,12 +399,12 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _selectedTags.clear();
       _filterTag = '';
-      _tasks.clear();
+      _diseases.clear();
       _hasMore = true;
       _searchQuery = ''; // Make sure internal search query is also cleared
     });
 
-    _loadTasks();
+    _loadDiseases();
   }
 
 
