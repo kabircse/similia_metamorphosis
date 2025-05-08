@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() {
   // Initialize database for Windows/Mac using FFI
@@ -32,7 +32,7 @@ class DiseaseProgressionApp extends StatelessWidget {
           secondaryLabelStyle: TextStyle(color: Colors.black),
         ),
       ),
-      home: HomeScreen(),
+      home: LoginScreen(),
     );
   }
 }
