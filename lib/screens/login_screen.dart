@@ -8,11 +8,11 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   static const _validEmail = 'kabir.cse10@gmail.com';
-  static const _validPassword = 'pass123';
+  static const _validPassword = 'pass';
 
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController(text: _validEmail);
-  final _passwordController = TextEditingController(text: _validPassword);
+  final _passwordController = TextEditingController();
 
   void _login() {
     if (_formKey.currentState!.validate()) {

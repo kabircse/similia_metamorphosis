@@ -204,13 +204,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Task List'),
+        title: Text('Disease Progressions'),
         actions: [
           IconButton(icon: Icon(Icons.upload_file), onPressed: _exportTasks),
           IconButton(icon: Icon(Icons.download), onPressed: _importTasks),
           IconButton(
             icon: Icon(Icons.delete_forever),
-            tooltip: 'Clear All Tasks',
+            tooltip: 'Clear All',
             onPressed: () async {
               final confirm = await showDialog<bool>(
                 context: context,
