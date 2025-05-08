@@ -36,33 +36,47 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(title: Text('Login')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(labelText: 'Email'),
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty ? 'Enter email' : null,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Add logo image at the top
+            Image.asset(
+              'assets/images/logo.png', // Path to your logo image
+              height: 100, // Adjust the height as needed
+              width: 100, // Adjust the width as needed
+            ),
+            SizedBox(height: 20), // Space between logo and form
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(labelText: 'Email'),
+                    validator:
+                        (value) =>
+                            value == null || value.isEmpty
+                                ? 'Enter email'
+                                : null,
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(labelText: 'Password'),
+                    obscureText: true,
+                    validator:
+                        (value) =>
+                            value == null || value.isEmpty
+                                ? 'Enter password'
+                                : null,
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(onPressed: _login, child: Text('Login')),
+                ],
               ),
-              SizedBox(height: 10),
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(labelText: 'Password'),
-                obscureText: true,
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty
-                            ? 'Enter password'
-                            : null,
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(onPressed: _login, child: Text('Login')),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

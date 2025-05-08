@@ -1,5 +1,6 @@
 name: similia_metamorphosis
 description: A similia metamorphosis.
+publish_to: "none" # Optional: to avoid accidental publishing
 
 environment:
   sdk: ">=3.7.0 <4.0.0"
@@ -37,13 +38,18 @@ flutter:
         - asset: assets/fonts/MaterialIcons-Regular.ttf
 
 flutter_launcher_icons:
+  image_path: "assets/icons/app_icon.png"
   android: true
   ios: true
-  macos: 
+  web:
+    generate: true
+    image_path: "assets/icons/app_icon.png"
+  macos:
+    generate: true
     image_path: "assets/icons/app_icon.png"
   windows:
+    generate: true
     image_path: "assets/icons/app_icon.png"
-  linux: 
+  linux:
+    generate: true
     image_path: "assets/icons/app_icon.png"
-  image_path: "assets/icons/app_icon.png"
-
