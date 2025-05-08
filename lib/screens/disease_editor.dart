@@ -268,9 +268,9 @@ void _showTagSelectionModal() async {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    ElevatedButton(
-                      onPressed: _saveDisease,
-                      child: Text('Save'),
+                    OutlinedButton(
+                      onPressed: _cancelDisease,
+                      child: Text('Cancel'),
                     ),
                     if (widget.disease != null)
                       ElevatedButton(
@@ -286,13 +286,13 @@ void _showTagSelectionModal() async {
                                   actions: [
                                     TextButton(
                                       onPressed:
-                                          () => Navigator.pop(context, false),
-                                      child: Text('Cancel'),
+                                          () => Navigator.pop(context, true),
+                                      child: Text('Delete'),
                                     ),
                                     TextButton(
                                       onPressed:
-                                          () => Navigator.pop(context, true),
-                                      child: Text('Delete'),
+                                          () => Navigator.pop(context, false),
+                                      child: Text('Cancel'),
                                     ),
                                   ],
                                 ),
@@ -306,9 +306,10 @@ void _showTagSelectionModal() async {
                           backgroundColor: Colors.red,
                         ),
                       ),
-                    OutlinedButton(
-                      onPressed: _cancelDisease,
-                      child: Text('Cancel'),
+                    
+                    ElevatedButton(
+                      onPressed: _saveDisease,
+                      child: Text('Save'),
                     ),
                   ],
                 ),
