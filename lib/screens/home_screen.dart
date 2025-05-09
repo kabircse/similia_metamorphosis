@@ -178,44 +178,45 @@ Future<void> _exportDiseases() async {
     }
   }
 
-  Future<void> _importDiseases() async {
+Future<void> _importDiseases() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.any,
       withData: true,
     );
 
     if (result != null && result.files.single.path != null) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
-
       final file = File(result.files.single.path!);
       final content = await file.readAsString();
 
       try {
         final List<dynamic> data = jsonDecode(content);
+        int importedCount = 0;
+
         for (var item in data) {
           if (item is Map<String, dynamic>) {
             item.remove('id');
             await DiseaseDB.insertDisease(Disease.fromMap(item));
+            importedCount++;
           }
         }
-        Navigator.of(context).pop(); // Close loading spinner
-        _resetAndSearch();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Imported successfully')));
+
+        if (mounted) {
+          _resetAndSearch(); // Refresh UI
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Imported $importedCount diseases successfully'),
+            ),
+          );
+        }
       } catch (e) {
-        Navigator.of(context).pop(); // Close loading spinner
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Invalid JSON file')));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Invalid JSON file')));
+        }
       }
     }
   }
-
 
 
   void _resetFilters() {
@@ -448,7 +449,7 @@ Future<void> _exportDiseases() async {
                 if (index == _diseases.length) {
                   return Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(6.0),
                       child: CircularProgressIndicator(),
                     ),
                   );
