@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _showDiseaseDetailsModal(Disease disease) {
+void _showDiseaseDetailsModal(Disease disease) {
     showDialog(
       context: context,
       builder:
@@ -78,9 +78,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    disease.title,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          disease.title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          softWrap: true,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.edit_rounded, size: 18),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DiseaseEditor(disease: disease),
+                            ),
+                          ).then((_) => _resetAndSearch());
+                        },
+                      ),
+                    ],
                   ),
                   SizedBox(height: 8),
                   if (disease.description.isNotEmpty) ...[
@@ -102,32 +125,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(height: 8),
                   ],
                   if (disease.tags.isNotEmpty)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            children:
-                                disease.tags
-                                    .map((tag) => Chip(label: Text(tag)))
-                                    .toList(),
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.edit_rounded, size: 18),
-                          onPressed: () {
-                            Navigator.pop(context);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DiseaseEditor(disease: disease),
-                              ),
-                            ).then((_) => _resetAndSearch());
-                          },
-                        ),
-                      ],
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children:
+                          disease.tags
+                              .map((tag) => Chip(label: Text(tag)))
+                              .toList(),
                     ),
                 ],
               ),
@@ -136,24 +140,41 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _exportDiseases() async {
-    final diseases = await DiseaseDB.getFilteredDiseases(
-      offset: 0,
-      limit: 1000000,
-    );
-    final jsonString = jsonEncode(diseases.map((t) => t.toMap()).toList());
 
-    final result = await FilePicker.platform.saveFile(
-      dialogTitle: 'Export JSON file',
-      fileName: 'diseases.json',
+Future<void> _exportDiseases() async {  
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    if (result != null) {
-      final file = File(result);
-      await file.writeAsString(jsonString);
+    try {
+      final diseases = await DiseaseDB.getFilteredDiseases(
+        offset: 0,
+        limit: 1000000,
+      );
+      final jsonString = jsonEncode(diseases.map((t) => t.toMap()).toList());
+
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: 'Export JSON file',
+        fileName: 'diseases.json',
+      );
+
+      if (result != null) {
+        final file = File(result);
+        await file.writeAsString(jsonString);
+        Navigator.of(context).pop(); // Close loading spinner
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Exported successfully')));
+      } else {
+        Navigator.of(context).pop(); // Close loading spinner
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // Close loading spinner
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Exported successfully')));
+      ).showSnackBar(SnackBar(content: Text('Export failed')));
     }
   }
 
@@ -164,6 +185,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (result != null && result.files.single.path != null) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
       final file = File(result.files.single.path!);
       final content = await file.readAsString();
 
@@ -175,17 +202,21 @@ class _HomeScreenState extends State<HomeScreen> {
             await DiseaseDB.insertDisease(Disease.fromMap(item));
           }
         }
+        Navigator.of(context).pop(); // Close loading spinner
         _resetAndSearch();
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Imported successfully')));
       } catch (e) {
+        Navigator.of(context).pop(); // Close loading spinner
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Invalid JSON file')));
       }
     }
   }
+
+
 
   void _resetFilters() {
     _searchController.clear();
