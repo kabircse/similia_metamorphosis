@@ -16,6 +16,10 @@ class DBHelper {
   static Future<Database> _initDB() async {
     String path;
 
+    if (kIsWeb) {
+      throw UnsupportedError("Web is not supported for sqflite.");
+    }
+
     if (Platform.isAndroid || Platform.isIOS) {
       final dbDir = await getApplicationDocumentsDirectory();
       path = join(dbDir.path, 'diseases.db');

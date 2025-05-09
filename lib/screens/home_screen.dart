@@ -28,9 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadDiseases();
     _scrollController.addListener(_scrollListener);
-    _searchController.addListener(() {
-      _resetAndSearch();
-    });
+    _searchController.addListener(_resetAndSearch);
   }
 
   void _resetAndSearch() {
@@ -46,8 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 100 &&
         !_isLoading &&
-        _hasMore &&
-        _scrollController.position.maxScrollExtent > 0) {
+        _hasMore) {
       _loadDiseases();
     }
   }
@@ -73,75 +70,69 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showDiseaseDetailsModal(Disease disease) {
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          contentPadding: const EdgeInsets.all(16.0),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      builder:
+          (context) => AlertDialog(
+            contentPadding: const EdgeInsets.all(16.0),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     disease.title,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  )
-                ],
-              ),
-              SizedBox(height: 8),
-              if (disease.description.isNotEmpty) ...[
-                Text(
-                  'Description:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(disease.description),
-                SizedBox(height: 8),
-              ],
-              if (disease.note.isNotEmpty) ...[
-                Text(''),
-                Text(
-                  disease.note,
-                  style: TextStyle(
-                    fontStyle: FontStyle.italic,
-                    color: Color(0xFF28a745),
                   ),
-                ),
-                SizedBox(height: 8),
-              ],
-              if (disease.tags.isNotEmpty) ...[
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Wrap(
-                        spacing: 8, // space between tags
-                        runSpacing: 4, // space between lines if tags wrap
-                        children:
-                            disease.tags
-                                .map((tag) => Chip(label: Text(tag)))
-                                .toList(),
+                  SizedBox(height: 8),
+                  if (disease.description.isNotEmpty) ...[
+                    Text(
+                      'Description:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(disease.description),
+                    SizedBox(height: 8),
+                  ],
+                  if (disease.note.isNotEmpty) ...[
+                    Text(
+                      disease.note,
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Color(0xFF28a745),
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.edit_rounded, size: 18),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => DiseaseEditor(disease: disease),
-                          ),
-                        ).then((_) => _resetAndSearch());
-                      },
-                    ),
+                    SizedBox(height: 8),
                   ],
-                ),
-              ],
-            ],
+                  if (disease.tags.isNotEmpty)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children:
+                                disease.tags
+                                    .map((tag) => Chip(label: Text(tag)))
+                                    .toList(),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.edit_rounded, size: 18),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DiseaseEditor(disease: disease),
+                              ),
+                            ).then((_) => _resetAndSearch());
+                          },
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
           ),
-        );
-      },
     );
   }
 
@@ -180,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final List<dynamic> data = jsonDecode(content);
         for (var item in data) {
           if (item is Map<String, dynamic>) {
-            item.remove('id'); // Ensure ID is removed
+            item.remove('id');
             await DiseaseDB.insertDisease(Disease.fromMap(item));
           }
         }
@@ -195,6 +186,142 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
   }
+
+  void _resetFilters() {
+    _searchController.clear();
+
+    setState(() {
+      _selectedTags.clear();
+      _filterTag = '';
+      _diseases.clear();
+      _hasMore = true;
+      _searchQuery = '';
+    });
+
+    _loadDiseases();
+  }
+
+  void _showTagSelectionModal() async {
+    final allTags = await DiseaseDB.getAllTags();
+    const int pageSize = 30;
+
+    List<String> filteredTags = [];
+    List<String> visibleTags = [];
+    String searchQuery = '';
+    int page = 0;
+
+    void updateVisibleTags(StateSetter setModalState) {
+      final matched =
+          searchQuery.isEmpty
+              ? allTags
+              : allTags
+                  .where(
+                    (tag) =>
+                        tag.toLowerCase().contains(searchQuery.toLowerCase()),
+                  )
+                  .toList();
+      filteredTags = matched;
+      visibleTags = filteredTags.take((page + 1) * pageSize).toList();
+      setModalState(() {}); // Safe here
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            updateVisibleTags(setModalState);
+
+            return AlertDialog(
+              title: Text(
+                "Select Tags to Filter",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: Container(
+                width: double.maxFinite,
+                height: 400,
+                child: Column(
+                  children: [
+                    TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Search tags',
+                        suffixIcon: Icon(Icons.search),
+                      ),
+                      onChanged: (value) {
+                        searchQuery = value;
+                        page = 0;
+                        // Defer update to avoid build phase update error
+                        Future.microtask(
+                          () => updateVisibleTags(setModalState),
+                        );
+                      },
+                    ),
+                    SizedBox(height: 10),
+                    Expanded(
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (scrollInfo) {
+                          if (scrollInfo.metrics.pixels ==
+                                  scrollInfo.metrics.maxScrollExtent &&
+                              visibleTags.length < filteredTags.length) {
+                            page++;
+                            Future.microtask(
+                              () => updateVisibleTags(setModalState),
+                            );
+                          }
+                          return false;
+                        },
+                        child: ListView.builder(
+                          itemCount: visibleTags.length,
+                          itemBuilder: (context, index) {
+                            final tag = visibleTags[index];
+                            return CheckboxListTile(
+                              title: Text(tag),
+                              value: _selectedTags[tag] ?? false,
+                              onChanged: (value) {
+                                setModalState(() {
+                                  _selectedTags[tag] = value ?? false;
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    final selected =
+                        _selectedTags.entries
+                            .where((e) => e.value)
+                            .map((e) => e.key)
+                            .toList();
+                    setState(() {
+                      _filterTag = selected.join(',');
+                      _diseases.clear();
+                      _hasMore = true;
+                    });
+                    _loadDiseases();
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("Apply"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("Cancel"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
 
   @override
   void dispose() {
@@ -241,15 +368,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
               if (confirm == true) {
                 await DiseaseDB.clearDiseases();
-                setState(() {
-                  _selectedTags.clear();
-                });
-
+                setState(() => _selectedTags.clear());
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('All diseases cleared'),
                     backgroundColor: Colors.green,
-                    duration: Duration(seconds: 2),
                   ),
                 );
               }
@@ -292,7 +415,12 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: _diseases.length + (_hasMore ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index == _diseases.length) {
-                  return Center(child: CircularProgressIndicator());
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
                 }
                 final disease = _diseases[index];
                 return ListTile(
@@ -326,86 +454,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  void _showTagSelectionModal() async {
-    final tags = await DiseaseDB.getAllTags();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return AlertDialog(
-              title: Text(
-                "Select Tags to Filter",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              content: SingleChildScrollView(
-                child: Column(                  
-                  spacing: 8,
-                  mainAxisSize: MainAxisSize.min,
-                  children:
-                      tags.map((tag) {
-                        return CheckboxListTile(
-                          title: Text(tag),
-                          value: _selectedTags[tag] ?? false,
-                          onChanged: (bool? value) {
-                            setModalState(() {
-                              _selectedTags[tag] = value ?? false;
-                            });
-                          },
-                        );
-                      }).toList(),
-                ),
-              ),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    final selected =
-                        _selectedTags.entries
-                            .where((e) => e.value)
-                            .map((e) => e.key)
-                            .toList();
-
-                    setState(() {
-                      _filterTag = selected.join(',');
-                      _diseases.clear();
-                      _hasMore = true;
-                    });
-                    _loadDiseases();
-                    Navigator.of(context).pop();
-                  },
-                  child: Text("Apply"),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text("Cancel"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-
-  }
-
-  void _resetFilters() {
-    _searchController
-        .clear(); // This only clears the text visually. Internal value is updated immediately.
-
-    setState(() {
-      _selectedTags.clear();
-      _filterTag = '';
-      _diseases.clear();
-      _hasMore = true;
-      _searchQuery = ''; // Make sure internal search query is also cleared
-    });
-
-    _loadDiseases();
-  }
-
-
 }
