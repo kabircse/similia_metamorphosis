@@ -323,6 +323,13 @@ Future<void> _importDiseases() async {
                 ),
               ),
               actions: [
+                
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("Cancel"),
+                ),
                 ElevatedButton(
                   onPressed: () {
                     final selected =
@@ -339,12 +346,6 @@ Future<void> _importDiseases() async {
                     Navigator.of(context).pop();
                   },
                   child: Text("Apply"),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text("Cancel"),
                 ),
               ],
             );
@@ -384,15 +385,15 @@ Future<void> _importDiseases() async {
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: Text('Cancel'),
-                        ),
-                        TextButton(
                           onPressed: () => Navigator.pop(context, true),
                           child: Text(
                             'Clear All',
                             style: TextStyle(color: Colors.red),
                           ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: Text('Cancel'),
                         ),
                       ],
                     ),

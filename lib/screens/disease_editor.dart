@@ -36,7 +36,9 @@ class _DiseaseEditorState extends State<DiseaseEditor> {
   void _loadAllTags() async {
     final diseases = await DiseaseDB.getDiseases();
     final allTags = diseases.expand((t) => t.tags).toSet().toList();
-    setState(() => _allTags = allTags);
+    setState(() {
+      _allTags = allTags;
+    });
   }
 
   void _saveDisease() async {
@@ -85,22 +87,24 @@ class _DiseaseEditorState extends State<DiseaseEditor> {
       await DiseaseDB.deleteDisease(widget.disease!.id!);
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Disease deleted'), backgroundColor: Colors.green,
+        SnackBar(
+          content: Text('Disease deleted'),
+          backgroundColor: Colors.green,
         ),
       );
     }
   }
 
-
   void _cancelDisease() {
     Navigator.pop(context);
   }
 
-void _showTagSelectionModal() async {
+  void _showTagSelectionModal() async {
     final sortedTags = List<String>.from(_allTags)
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
     final ScrollController _scrollController = ScrollController();
+    final TextEditingController _searchController = TextEditingController();
     final Set<String> tempSelectedTags = Set.from(_selectedTags);
 
     await showDialog(
@@ -110,12 +114,21 @@ void _showTagSelectionModal() async {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Container(
-              padding: EdgeInsets.all(16),
-              constraints: BoxConstraints(maxHeight: 400, maxWidth: 360),
-              child: StatefulBuilder(
-                builder: (context, setModalState) {
-                  return Column(
+            child: StatefulBuilder(
+              builder: (context, setModalState) {
+                List<String> _filteredTags =
+                    sortedTags
+                        .where(
+                          (tag) => tag.toLowerCase().contains(
+                            _searchController.text.toLowerCase(),
+                          ),
+                        )
+                        .toList();
+
+                return Container(
+                  padding: EdgeInsets.all(16),
+                  constraints: BoxConstraints(maxHeight: 500, maxWidth: 360),
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
@@ -126,15 +139,28 @@ void _showTagSelectionModal() async {
                         ),
                       ),
                       SizedBox(height: 12),
+                      TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Search tags...',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        onChanged: (query) {
+                          setModalState(() {});
+                        },
+                      ),
+                      SizedBox(height: 12),
                       Expanded(
                         child: Scrollbar(
                           controller: _scrollController,
                           thumbVisibility: true,
                           child: ListView.builder(
                             controller: _scrollController,
-                            itemCount: sortedTags.length,
+                            itemCount: _filteredTags.length,
                             itemBuilder: (context, index) {
-                              final tag = sortedTags[index];
+                              final tag = _filteredTags[index];
                               final isChecked = tempSelectedTags.contains(tag);
                               return CheckboxListTile(
                                 title: Text(tag),
@@ -175,14 +201,13 @@ void _showTagSelectionModal() async {
                         ],
                       ),
                     ],
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
           ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -301,12 +326,11 @@ void _showTagSelectionModal() async {
                             _deleteDisease();
                           }
                         },
-                        child: Text('Delete'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                         ),
+                        child: Text('Delete'),
                       ),
-                    
                     ElevatedButton(
                       onPressed: _saveDisease,
                       child: Text('Save'),
